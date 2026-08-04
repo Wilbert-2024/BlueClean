@@ -36,6 +36,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.datos.Colores
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 // Nuestro color verde personalizado
 
@@ -97,9 +99,13 @@ fun MenuPrincipal() {
             startDestination = "inicio",
             modifier = Modifier.padding(paddingInterno)
         ) {
-            composable("inicio") { PantallaDePrueba("Pantalla de Inicio (Aquí irá el camión)") }
+            composable("inicio") { Inicio()}
             composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
+            composable("calendario"){Calendario( barrio = "Santa Rosa",
+                diasRuta = setOf( DayOfWeek.TUESDAY, DayOfWeek.THURSDAY,  DayOfWeek.SATURDAY  ),
+                horaRuta = LocalTime.of(8, 0))}
+
             composable("perfil") { PantallaDePrueba("Pantalla de Perfil") }
         }
     }
