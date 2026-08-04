@@ -39,8 +39,6 @@ import com.example.afinal.datos.Colores
 import java.time.DayOfWeek
 import java.time.LocalTime
 
-// Nuestro color verde personalizado
-
 
 // Modelo para los items del menú
 data class ItemMenu( val ruta: String,  val icono: ImageVector,  val titulo: String )
@@ -127,9 +125,7 @@ fun PantallaDePrueba(texto: String) {
                 fontWeight = FontWeight.Bold,
                 color = Colores.TextoOscuro
             )
-            Text(
-                text = "¡El menú funciona correctamente!",
-                color = Colores.TextoOscuro,
+            Text( text = "¡El menú funciona correctamente!", color = Colores.TextoOscuro,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
