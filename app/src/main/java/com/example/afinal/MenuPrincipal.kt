@@ -37,10 +37,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.datos.Colores
 
-// Nuestro color verde personalizado
-
-
-// Modelo para los items del menú
 data class ItemMenu( val ruta: String,  val icono: ImageVector,  val titulo: String )
 
 @Composable
@@ -97,7 +93,6 @@ fun MenuPrincipal() {
             startDestination = "inicio",
             modifier = Modifier.padding(paddingInterno)
         ) {
-            composable("inicio") { PantallaDePrueba("Pantalla de Inicio (Aquí irá el camión)") }
             composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
             composable("perfil") { PantallaDePrueba("Pantalla de Perfil") }
@@ -115,17 +110,10 @@ fun PantallaDePrueba(texto: String) {
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = texto,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Colores.TextoOscuro
+            Text( text = texto,   fontSize = 24.sp,   fontWeight = FontWeight.Bold,
+                color = Colores.TextoOscuro, modifier = Modifier.padding(top = 8.dp)
             )
-            Text(
-                text = "¡El menú funciona correctamente!",
-                color = Colores.TextoOscuro,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+              
         }
     }
 }
