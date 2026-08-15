@@ -45,9 +45,7 @@ class MainActivity : ComponentActivity() {
 
                     PantallaMensajeGlobal()
                 }
-
             }
-
         }
     }
 }

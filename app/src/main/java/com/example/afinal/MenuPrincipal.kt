@@ -6,16 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Architecture
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -36,6 +32,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.datos.Colores
+import java.time.DayOfWeek
+import java.time.LocalTime
 
 data class ItemMenu( val ruta: String,  val icono: ImageVector,  val titulo: String )
 
@@ -47,9 +45,9 @@ fun MenuPrincipal() {
     val itemsMenu = listOf(
         ItemMenu("inicio", Icons.Default.Home, "Inicio"),
         ItemMenu("mapa", Icons.Default.LocationOn, "Mapa"),
-        ItemMenu("avisos", Icons.Default.ErrorOutline, "Avisos"),
-        ItemMenu("calendario", Icons.Default.CalendarToday, "Calendario"),
-        ItemMenu("perfil", Icons.Default.MoreHoriz, "Perfil")
+        ItemMenu("avisos", Icons.Default.Warning, "Avisos"),
+        ItemMenu("calendario", Icons.Default.DateRange, "Calendario"),
+        ItemMenu("perfil", Icons.Default.MoreVert, "Perfil")
     )
 
     Scaffold(
@@ -93,8 +91,22 @@ fun MenuPrincipal() {
             startDestination = "inicio",
             modifier = Modifier.padding(paddingInterno)
         ) {
+            composable("inicio") { Inicio() }
             composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
+            composable("calendario") {
+                Calendario(
+                    barrio = "Santa Rosa",
+                    diasRuta = setOf(
+                        DayOfWeek.TUESDAY,
+                        DayOfWeek.THURSDAY,
+                        DayOfWeek.SATURDAY
+                    ),
+                    horaRuta = LocalTime.of(6, 0),
+                    nombreRuta = "Ruta Santa Rosa",
+                    horaFinRuta = LocalTime.of(12, 0)
+                )
+            }
             composable("perfil") { PantallaDePrueba("Pantalla de Perfil") }
         }
     }

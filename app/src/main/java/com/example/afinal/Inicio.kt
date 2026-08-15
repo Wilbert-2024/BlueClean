@@ -88,7 +88,7 @@ fun Inicio() {
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text( text = "¡Hola, Martin!", fontSize = 22.sp, fontWeight = FontWeight.Bold,color = Color.White,letterSpacing = (-0.8).sp)
+                    Text( text = "¡Hola, Martin!", fontSize = 22.sp, fontWeight = FontWeight.Bold,color = Color.White,letterSpacing = 0.sp)
 
                 }
                 Box(
@@ -153,7 +153,7 @@ fun Inicio() {
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = NegroElegante,
-                        letterSpacing = (-0.8).sp
+                        letterSpacing = 0.sp
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
