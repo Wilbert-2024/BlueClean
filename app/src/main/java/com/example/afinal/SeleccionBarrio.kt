@@ -49,8 +49,8 @@ import androidx.compose.ui.unit.sp
 import com.example.afinal.datos.Colores
 import com.example.afinal.datos.ListadoBarrios
 import com.example.afinal.datos.mensajeria.MensajesFlotantes
-import com.example.final.guardarDatosTelefono.datosEnMemoria
-import com.example.final.mensajeria.Mensajeria
+import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
+import com.example.afinal.datos.mensajeria.Mensajeria
 import kotlinx.coroutines.launch
 
 // Colores del tema

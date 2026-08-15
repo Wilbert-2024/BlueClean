@@ -48,7 +48,7 @@ fun MenuPrincipal() {
         ItemMenu("inicio", Icons.Default.Home, "Inicio"),
         ItemMenu("mapa", Icons.Default.LocationOn, "Mapa"),
         ItemMenu("avisos", Icons.Default.ErrorOutline, "Avisos"),
-        ItemMenu("calendario", Icons.Default.CalendarToday, "calendario"),
+        ItemMenu("calendario", Icons.Default.CalendarToday, "Calendario"),
         ItemMenu("perfil", Icons.Default.MoreHoriz, "Perfil")
     )
 

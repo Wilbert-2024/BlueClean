@@ -1,4 +1,4 @@
-package com.example.final.mensajeria
+package com.example.afinal.datos.mensajeria
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

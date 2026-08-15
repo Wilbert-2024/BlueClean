@@ -12,10 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavHost
 import androidx.navigation.compose.rememberNavController
+import com.example.afinal.datos.mensajeria.PantallaMensajeGlobal
 import com.example.afinal.ui.theme.FinalTheme
-import com.example.final.mensajeria.PantallaMensajeGlobal
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
