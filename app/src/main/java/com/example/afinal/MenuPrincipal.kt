@@ -1,4 +1,4 @@
-package com.example.afinal
+﻿package com.example.afinal
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -32,6 +32,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.datos.Colores
+import com.example.afinal.mapa.PantallaMapa
 import java.time.DayOfWeek
 import java.time.LocalTime
 
@@ -92,7 +93,7 @@ fun MenuPrincipal() {
             modifier = Modifier.padding(paddingInterno)
         ) {
             composable("inicio") { Inicio() }
-            composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
+            composable("mapa") { PantallaMapa() }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
             composable("calendario") {
                 Calendario(
@@ -129,3 +130,4 @@ fun PantallaDePrueba(texto: String) {
         }
     }
 }
+
