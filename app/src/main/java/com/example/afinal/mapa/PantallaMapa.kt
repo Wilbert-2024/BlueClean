@@ -74,12 +74,39 @@ fun PantallaMapa() {
     }
 
     val permisos = remember(activity) { ConfiguracionPermisos(activity) }
-    val baseDato = remember {
-        FirebaseBootstrap.ensureInitialized(context)
-        ConsultaBaseDato()
+    val serviciosMapa = remember(activity, context) {
+        runCatching {
+            FirebaseBootstrap.ensureInitialized(context)
+            ServiciosMapa(
+                baseDato = ConsultaBaseDato(),
+                manejadorMapa = ManejadorMapa(activity)
+            )
+        }
     }
+    val errorInicializacion = serviciosMapa.exceptionOrNull()
+
+    if (errorInicializacion != null) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF5F5F5))
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No se pudo iniciar el mapa: ${errorInicializacion.message ?: "configuracion invalida"}",
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+        return
+    }
+
+    val componentesMapa = serviciosMapa.getOrThrow()
+    val baseDato = componentesMapa.baseDato
+    val manejadorMapa = componentesMapa.manejadorMapa
     val mensajes = remember { VentEmergentesAlert() }
-    val manejadorMapa = remember(activity) { ManejadorMapa(activity) }
     val mapView = rememberMapViewWithLifecycle()
     val handler = remember { Handler(Looper.getMainLooper()) }
     val tiempoInicialPorRuta = remember { mutableMapOf<String, Long?>() }
@@ -304,6 +331,11 @@ fun PantallaMapa() {
         }
     }
 }
+
+private data class ServiciosMapa(
+    val baseDato: ConsultaBaseDato,
+    val manejadorMapa: ManejadorMapa
+)
 
 @Composable
 private fun BotonRuta(texto: String, onClick: () -> Unit) {

@@ -5,11 +5,11 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 
 object FirebaseBootstrap {
-    const val DATABASE_URL = "REEMPLAZA_CON_TU_FIREBASE_DATABASE_URL"
+    const val DATABASE_URL = "https://ubicacion-a4f61-default-rtdb.firebaseio.com"
 
-    private const val FIREBASE_APP_ID = "REEMPLAZA_CON_TU_FIREBASE_APP_ID"
-    private const val FIREBASE_API_KEY = "REEMPLAZA_CON_TU_FIREBASE_API_KEY"
-    private const val FIREBASE_PROJECT_ID = "REEMPLAZA_CON_TU_FIREBASE_PROJECT_ID"
+    private const val FIREBASE_APP_ID = "1:990833293006:android:6710876df704e6989d829f"
+    private const val FIREBASE_API_KEY = "AIzaSyDct9LJPAXfMdpHDH2fPl7fXnCNT4S2erQ"
+    private const val FIREBASE_PROJECT_ID = "ubicacion-a4f61"
 
     fun ensureInitialized(context: Context) {
         val appContext = context.applicationContext
