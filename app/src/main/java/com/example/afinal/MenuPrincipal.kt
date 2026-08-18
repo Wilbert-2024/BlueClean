@@ -36,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.datos.Colores
+import com.example.afinal.mapa.PantallaMapa
 
 data class ItemMenu( val ruta: String,  val icono: ImageVector,  val titulo: String )
 
@@ -89,7 +90,7 @@ fun MenuPrincipal() {
     ) { paddingInterno ->
         NavHost(navController = controladorNav, startDestination = "inicio", modifier = Modifier.padding(paddingInterno)) {
             composable("inicio") { Inicio() }
-            composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
+            composable("mapa") { PantallaMapa() }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
             composable("calendario") {
                 Calendario(barrio = "Santa Rosa", diasRuta = java.util.EnumSet.of(java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
