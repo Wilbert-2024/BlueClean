@@ -87,14 +87,13 @@ fun MenuPrincipal() {
             }
         }
     ) { paddingInterno ->
-        // Aquí es donde cambian las pantallas
-        NavHost(
-            navController = controladorNav,
-            startDestination = "inicio",
-            modifier = Modifier.padding(paddingInterno)
-        ) {
+        NavHost(navController = controladorNav, startDestination = "inicio", modifier = Modifier.padding(paddingInterno)) {
+            composable("inicio") { Inicio() }
             composable("mapa") { PantallaDePrueba("Pantalla de Mapa") }
             composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
+            composable("calendario") {
+                Calendario(barrio = "Santa Rosa", diasRuta = java.util.EnumSet.of(java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
+            }
             composable("perfil") { PantallaDePrueba("Pantalla de Perfil") }
         }
     }
