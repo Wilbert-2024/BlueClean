@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.DateRange
@@ -305,7 +306,7 @@ private fun TarjetaResumenRuta(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            imageVector = Icons.Default.DateRange,
+                            imageVector = Icons.Default.AccessTime,
                             contentDescription = null,
                             tint = Colores.VerdePrincipal,
                             modifier = Modifier.size(22.dp)
@@ -386,7 +387,7 @@ private fun TarjetaResumenRuta(
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.DateRange,
+                                    imageVector = Icons.Default.AccessTime,
                                     contentDescription = null,
                                     tint = Colores.VerdePrincipal,
                                     modifier = Modifier.size(22.dp)
