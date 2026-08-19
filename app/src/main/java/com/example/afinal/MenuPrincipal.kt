@@ -41,7 +41,7 @@ import com.example.afinal.mapa.PantallaMapa
 data class ItemMenu( val ruta: String,  val icono: ImageVector,  val titulo: String )
 
 @Composable
-fun MenuPrincipal() {
+fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
     val controladorNav = rememberNavController()
 
     // Lista de opciones del menú inferior
@@ -91,29 +91,11 @@ fun MenuPrincipal() {
         NavHost(navController = controladorNav, startDestination = "inicio", modifier = Modifier.padding(paddingInterno)) {
             composable("inicio") { Inicio() }
             composable("mapa") { PantallaMapa() }
-            composable("avisos") { PantallaDePrueba("Pantalla de Avisos") }
+            composable("avisos") { Prueba(onRegresarAlInicio) }
             composable("calendario") {
                 Calendario(barrio = "Santa Rosa", diasRuta = java.util.EnumSet.of(java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
             }
-            composable("perfil") { PantallaDePrueba("Pantalla de Perfil") }
-        }
-    }
-}
-
-// Una pantalla temporal sencilla para probar que el menú funciona
-@Composable
-fun PantallaDePrueba(texto: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF5F5F5)),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text( text = texto,   fontSize = 24.sp,   fontWeight = FontWeight.Bold,
-                color = Colores.TextoOscuro, modifier = Modifier.padding(top = 8.dp)
-            )
-              
+            composable("perfil") { Prueba(onRegresarAlInicio) }
         }
     }
 }
