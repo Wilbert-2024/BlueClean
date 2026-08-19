@@ -161,7 +161,7 @@ fun PantallaSeleccionBarrio(
                         val guardadoExitoso = datosEnMemoria.guardaDatos(context, nombreUsuario, barrioSeleccionado)
                         
                         if (guardadoExitoso) {
-                            mostrarMensaje = true
+                            //mostrarMensaje = true
                             onContinuarClick()
                         } else {
                             Mensajeria.error("Error técnico: No se pudieron guardar los datos en el dispositivo")
