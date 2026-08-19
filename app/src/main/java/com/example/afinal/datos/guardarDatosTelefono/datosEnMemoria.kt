@@ -1,6 +1,8 @@
 package com.example.afinal.datos.guardarDatosTelefono
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 
 object datosEnMemoria {
@@ -13,17 +15,22 @@ object datosEnMemoria {
 
 
     suspend fun guardaDatos(context: Context, NombreUser: String, barrio: String): Boolean {
-        return try {
+        return withContext(Dispatchers.IO) {
+            try {
+                val guardar = context.getSharedPreferences(nombreArchivo, Context.MODE_PRIVATE).edit()
 
-            context.getSharedPreferences(nombreArchivo, Context.MODE_PRIVATE) .edit().clear()
-                .putString("NomUser", NombreUser)
-                .putString("Barrio", barrio)
-                .apply()
+                guardar.clear()
 
-            true
+                guardar.putString("NomUser", NombreUser)
+                guardar.putString("Barrio", barrio)
 
-        } catch (e: Exception) {
-            false
+                val resultado = guardar.commit()
+                
+                resultado
+
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 
@@ -43,15 +50,6 @@ object datosEnMemoria {
         } else null
     }
 
-    // GUARDAR SOLO SI CAMBIA USUARIO
-    suspend fun guardarSiCambio(context: Context, NombreUser: String, BarrioSel: String): Boolean {
-        val prefs = context.getSharedPreferences(nombreArchivo, Context.MODE_PRIVATE)
-        val BarriosSelec = prefs.getString("Barrio", null)
-
-        if (BarriosSelec == BarrioSel) return false
-
-        return guardaDatos(context, NombreUser,BarrioSel)
-    }
 
     // ELIMINAR SESIÓN
     fun eliminar(context: Context) {
