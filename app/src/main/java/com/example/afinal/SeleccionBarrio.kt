@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place // <--- Icono de ubicación importado
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -44,6 +45,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.afinal.datos.Colores
@@ -66,12 +68,16 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
     val context = LocalContext.current
     var mostrarMensaje by remember { mutableStateOf(false) }
 
+    // --- CAMBIO PARA PROGRAMADOR: Estado para el círculo de carga ---
+    var estaCargando by remember { mutableStateOf(false) }
+
     // Lista de barrios
     val listaBarrios = ListadoBarrios.lista
 
-    Column(
-        modifier = Modifier .fillMaxSize() .background(Colores.GrisFondo).statusBarsPadding() .navigationBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier .fillMaxSize() .background(Colores.GrisFondo).statusBarsPadding() .navigationBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
         // Título principal
         Text(  text = "Selecciona tu barrio", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,  color = Colores.VerdePrincipal )
 
@@ -142,29 +148,53 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
 // Botón Continuar
         Button(
             onClick = {
-
                 val verificar = validarDatosObtenidos(nombreUsuario, barrioSeleccionado)
 
                 if (verificar) {
                     corrutina.launch {
-                        datosEnMemoria.guardaDatos(context, nombreUsuario, barrioSeleccionado)
-                        mostrarMensaje = true
-                        onContinuarClick()
+                        // --- CAMBIO PARA PROGRAMADOR: Activamos carga antes de guardar ---
+                        estaCargando = true
+                        
+                        val guardadoExitoso = datosEnMemoria.guardaDatos(context, nombreUsuario, barrioSeleccionado)
+                        
+                        if (guardadoExitoso) {
+                            mostrarMensaje = true
+                            onContinuarClick()
+                        } else {
+                            Mensajeria.error("Error técnico: No se pudieron guardar los datos en el dispositivo")
+                        }
+                        
+                        // --- CAMBIO PARA PROGRAMADOR: Desactivamos carga al finalizar ---
+                        estaCargando = false
                     }
                 }
-
-
             },
             modifier = Modifier .fillMaxWidth() .height(56.dp),
+            enabled = !estaCargando, // Bloqueamos el botón si está cargando
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Colores.VerdePrincipal),
             elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
         ) {
-            Text( text = "CONTINUAR", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White )
+            if (estaCargando) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+            } else {
+                Text( text = "CONTINUAR", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White )
+            }
         }
     }
-    MensajesFlotantes.Dialogo(mostrarMensaje, nombreUsuario, barrioSeleccionado) { mostrarMensaje = false }
+    
+    // --- CAMBIO PARA PROGRAMADOR: Overlay de carga que bloquea la pantalla completa si es necesario ---
+    if (estaCargando) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).clickable(enabled = false) {},
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Colores.VerdePrincipal)
+        }
+    }
 
+    MensajesFlotantes.Dialogo(mostrarMensaje, nombreUsuario, barrioSeleccionado) { mostrarMensaje = false }
+    }
 }
 
 fun validarDatosObtenidos(NombreUser: String, BarrioSeleccionado: String): Boolean {
@@ -206,7 +236,6 @@ fun ItemBarrio( nombre: String, estaSeleccionado: Boolean, alHacerClic: () -> Un
             )
         }
 
-        // Lado derecho: Circulo de check (solo si está seleccionado)
         if (estaSeleccionado) {
             Box(
                 modifier = Modifier.size(24.dp) .clip(RoundedCornerShape(50)).background(Colores.VerdeSecundario),
@@ -220,6 +249,7 @@ fun ItemBarrio( nombre: String, estaSeleccionado: Boolean, alHacerClic: () -> Un
     }
 }
 
+@Preview(showBackground = true)
 @Composable
 fun VistaPreviaPantallaSeleccionBarrio() {
     PantallaSeleccionBarrio( onContinuarClick = {})
