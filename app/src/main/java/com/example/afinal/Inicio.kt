@@ -37,10 +37,15 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -49,12 +54,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.afinal.datos.Colores
+import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
+import kotlinx.coroutines.delay
 
 val VerdeOscuroGrad = Color(0xFF00381F)
 val VerdeClaroGrad = Color(0xFF006B3C)
@@ -64,11 +72,34 @@ val NegroElegante = Color(0xFF1C1C1E)
 
 @Composable
 fun Inicio() {
-    val estaEnServicio = true
+    val context = LocalContext.current
+    
+    // --- CAMBIO PARA PROGRAMADOR: Estados para la carga de datos ---
+    var estaCargando by remember { mutableStateOf(true) }
+    var datosUsuario by remember { mutableStateOf<datosEnMemoria.DatosUsuario?>(null) }
 
-    Box(
-        modifier = Modifier.fillMaxSize().background(Colores.GrisFondo).verticalScroll(rememberScrollState())
-    ) {
+    // Simulamos una pequeña carga para que se aprecie el feedback visual
+    LaunchedEffect(Unit) {
+        delay(800) // Pausa de medio segundo para ver el círculo
+        datosUsuario = datosEnMemoria.obtener(context)
+        estaCargando = false
+    }
+
+    if (estaCargando) {
+        // Pantalla de carga mientras se recuperan los datos
+        Box(modifier = Modifier.fillMaxSize().background(Colores.GrisFondo), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Colores.VerdePrincipal)
+        }
+    } else {
+        // Contenido principal una vez cargado
+        val nombreMostrar = datosUsuario?.NomUsuario ?: "Vecino/a"
+        val barrioMostrar = datosUsuario?.Barrio ?: "Sin barrio"
+
+        val estaEnServicio = true
+
+        Box(
+            modifier = Modifier.fillMaxSize().background(Colores.GrisFondo).verticalScroll(rememberScrollState())
+        ) {
 
         Box(
             modifier = Modifier.fillMaxWidth().height(275.dp).clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
@@ -88,7 +119,8 @@ fun Inicio() {
                 verticalAlignment = Alignment.Top
             ) {
                 Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                    Text( text = "¡Hola, Martin!", fontSize = 22.sp, fontWeight = FontWeight.Bold,color = Color.White,letterSpacing = (-0.8).sp)
+                    // --- CAMBIO PARA PROGRAMADOR: Usamos el nombre real guardado ---
+                    Text( text = "¡Hola, $nombreMostrar!", fontSize = 22.sp, fontWeight = FontWeight.Bold,color = Color.White,letterSpacing = (-0.8).sp)
 
                 }
                 Box(
@@ -168,8 +200,9 @@ fun Inicio() {
                             modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        // --- CAMBIO PARA PROGRAMADOR: Usamos el barrio real guardado ---
                         Text(
-                            text = "Ruta Santa Rosa - Loma Fresca",
+                            text = "Ruta $barrioMostrar - Loma Fresca",
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium,
                             color = GrisSutil
@@ -288,6 +321,7 @@ fun Inicio() {
             }
         }
     }
+}
 }
 
 @Composable
