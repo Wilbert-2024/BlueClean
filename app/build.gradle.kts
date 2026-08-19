@@ -69,9 +69,16 @@ dependencies {
     // Mapa y ubicacion en tiempo real
     implementation("com.google.android.gms:play-services-maps:19.2.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
+
+    //conexion a firebase
     implementation(platform("com.google.firebase:firebase-bom:33.16.0"))
+
+    //base fireBaseTime
     implementation("com.google.firebase:firebase-database")
-    implementation("com.google.firebase:firebase-common")
+    //implementation("com.google.firebase:firebase-common")
+
+    //base datoStore
+    implementation("com.google.firebase:firebase-firestore")
 
 
 }
