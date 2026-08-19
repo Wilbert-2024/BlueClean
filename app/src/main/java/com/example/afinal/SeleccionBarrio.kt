@@ -1,5 +1,6 @@
 package com.example.afinal
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,10 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -21,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place // <--- Icono de ubicación importado
@@ -28,6 +32,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -55,54 +60,53 @@ import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
 import com.example.afinal.datos.mensajeria.Mensajeria
 import kotlinx.coroutines.launch
 
-// Colores del tema
-
 
 @Composable
-fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
-    // Estados
-    var nombreUsuario by remember { mutableStateOf("") }
-    var barrioSeleccionado by remember { mutableStateOf("") }
+fun PantallaSeleccionBarrio( 
+    onContinuarClick: () -> Unit,
+    onAtrasClick: (() -> Unit)? = null
+) {
+   // es para hacer que el boton regrreesar del telefono funcione
+    if (onAtrasClick != null) {
+        BackHandler {
+            onAtrasClick()
+        }
+    }
+
+    val context = LocalContext.current
+
+    val datosGuardados = remember { datosEnMemoria.obtener(context) }
+
+    var nombreUsuario by remember { mutableStateOf(datosGuardados?.NomUsuario ?: "") }
+    var barrioSeleccionado by remember { mutableStateOf(datosGuardados?.Barrio ?: "") }
     val controladorTeclado = LocalSoftwareKeyboardController.current
     val corrutina = rememberCoroutineScope()
-    val context = LocalContext.current
     var mostrarMensaje by remember { mutableStateOf(false) }
-
-    // --- CAMBIO PARA PROGRAMADOR: Estado para el círculo de carga ---
+    
     var estaCargando by remember { mutableStateOf(false) }
 
-    // Lista de barrios
     val listaBarrios = ListadoBarrios.lista
 
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier .fillMaxSize() .background(Colores.GrisFondo).statusBarsPadding() .navigationBarsPadding().padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-        // Título principal
-        Text(  text = "Selecciona tu barrio", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold,  color = Colores.VerdePrincipal )
+            Text( text = "Selecciona tu barrio", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Colores.VerdePrincipal )
 
-        Text( text = "Ingresa tu nombre y elige el barrio donde vives para mostrarte el servicio de recolección.",
-            fontSize = 14.sp, color = Colores.TextoGris, lineHeight = 20.sp,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
-        )
+            Text( text = "Ingresa tu nombre y elige el barrio donde vives para mostrarte el servicio de recolección.",
+                fontSize = 14.sp, color = Colores.TextoGris, lineHeight = 20.sp, modifier = Modifier.padding(top = 4.dp, bottom = 32.dp)
+            )
 
-        Text(text = "Tu nombre", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Colores.TextoOscuro,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-        )
+        Text(text = "Tu nombre", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Colores.TextoOscuro, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp) )
 
-        // donde se ingresa el nombre del user
+        // configuracion para que el nombre se ingrese cuando se quiere cambiar el barrio
         OutlinedTextField(
             value = nombreUsuario,
             onValueChange = { nombreUsuario = it },
             modifier = Modifier.fillMaxWidth().padding(bottom = 28.dp),
             placeholder = { Text("Escribe tu nombre aquí", color = Color.Gray) },
             leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.Gray,
-                    modifier = Modifier.size(20.dp)
-                )
+                Icon(  imageVector = Icons.Default.Person, contentDescription = null,tint = Color.Gray, modifier = Modifier.size(20.dp) )
             },
             shape = RoundedCornerShape(16.dp),
             colors = TextFieldDefaults.colors(
@@ -124,10 +128,9 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
             color = Colores.TextoOscuro,  modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
 
-        // Contenedor de la Lista
+ // Contenedor de la Lista
         Box(
-            modifier = Modifier.fillMaxWidth() .weight(1f) .clip(RoundedCornerShape(16.dp))
-                .background(Colores.BlancoTarjeta).padding(8.dp)
+            modifier = Modifier.fillMaxWidth() .weight(1f) .clip(RoundedCornerShape(16.dp)).background(Colores.BlancoTarjeta).padding(8.dp)
         ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -152,7 +155,7 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
 
                 if (verificar) {
                     corrutina.launch {
-                        // --- CAMBIO PARA PROGRAMADOR: Activamos carga antes de guardar ---
+                        // Activamos el circulo qeu da vueltas o circulo que señala cargando
                         estaCargando = true
                         
                         val guardadoExitoso = datosEnMemoria.guardaDatos(context, nombreUsuario, barrioSeleccionado)
@@ -164,7 +167,7 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
                             Mensajeria.error("Error técnico: No se pudieron guardar los datos en el dispositivo")
                         }
                         
-                        // --- CAMBIO PARA PROGRAMADOR: Desactivamos carga al finalizar ---
+                        //  Desactivamos carga al finalizar
                         estaCargando = false
                     }
                 }
@@ -183,7 +186,7 @@ fun PantallaSeleccionBarrio( onContinuarClick: () -> Unit ) {
         }
     }
     
-    // --- CAMBIO PARA PROGRAMADOR: Overlay de carga que bloquea la pantalla completa si es necesario ---
+
     if (estaCargando) {
         Box(
             modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)).clickable(enabled = false) {},
@@ -221,9 +224,8 @@ fun ItemBarrio( nombre: String, estaSeleccionado: Boolean, alHacerClic: () -> Un
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Lado izquierdo: Icono de ubicación + Nombre del barrio
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically)
+        {
             Icon(
                 imageVector = Icons.Default.Place, contentDescription = "Ubicación",
                 // El icono se pone verde si está seleccionado, gris si no
