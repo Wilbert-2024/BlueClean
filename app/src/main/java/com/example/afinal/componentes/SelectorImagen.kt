@@ -1,0 +1,75 @@
+package com.example.afinal.componentes
+
+import android.content.Context
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Camera
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import java.io.File
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SelectorImagen(
+    mostrarDialogo: Boolean,
+    onDismiss: () -> Unit,
+    onImagenSeleccionada: (Uri) -> Unit
+) {
+    val context = LocalContext.current
+    var uriTemporal by remember { mutableStateOf<Uri?>(null) }
+
+    // Launcher para Galería
+    val launcherGaleria = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        uri?.let { onImagenSeleccionada(it) }
+        onDismiss()
+    }
+
+    // Launcher para Cámara
+    val launcherCamara = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) {
+            uriTemporal?.let { onImagenSeleccionada(it) }
+        }
+        onDismiss()
+    }
+
+    // Función para crear URI temporal para la cámara
+    fun crearUriTemporal(): Uri {
+        val file = File(context.cacheDir, "images").apply { mkdirs() }
+        val imageFile = File(file, "temp_image_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", imageFile)
+    }
+
+    if (mostrarDialogo) {
+        ModalBottomSheet(onDismissRequest = onDismiss) {
+            Column(Modifier.fillMaxWidth().padding(16.dp).padding(bottom = 32.dp)) {
+                Text("Seleccionar imagen", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(bottom = 16.dp))
+                
+                ListItem(
+                    headlineContent = { Text("Cámara") },
+                    leadingContent = { Icon(Icons.Default.Camera, null) },
+                    modifier = Modifier.clickable {
+                        val uri = crearUriTemporal()
+                        uriTemporal = uri
+                        launcherCamara.launch(uri)
+                    }
+                )
+                
+                ListItem(
+                    headlineContent = { Text("Galería") },
+                    leadingContent = { Icon(Icons.Default.PhotoLibrary, null) },
+                    modifier = Modifier.clickable {
+                        launcherGaleria.launch("image/*")
+                    }
+                )
+            }
+        }
+    }
+}
