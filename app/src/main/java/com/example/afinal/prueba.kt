@@ -14,10 +14,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.afinal.DB.vistaModal.PuntoTrasarRuta_vistModal
 import com.example.afinal.datos.Colores
 
 @Composable
-fun Prueba(onRegresar: () -> Unit) {
+fun Prueba(onRegresar: () -> Unit,  puntoViewModel: PuntoTrasarRuta_vistModal = viewModel()) {
     Box(
         modifier = Modifier .fillMaxSize().background(Color(0xFFF5F5F5)),
         contentAlignment = Alignment.Center
@@ -41,8 +43,30 @@ fun Prueba(onRegresar: () -> Unit) {
             ) {
                 Text( text = "REGRESAR A SELECCIÓN", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White )
             }
+
+            Spacer(Modifier.height(32.dp))
+
+            Button(onClick = {
+                puntoViewModel.insertarPuntos("ruta_1",
+                onSuccess = { println("Coordenadas enviadas correctamente")},
+                onError =  { println("Error:")}
+
+
+                )
+
+            }, modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Colores.VerdePrincipal)
+
+            ) {
+                Text("enviar coordenadas")
+            }
+
         }
     }
+
+
+
 }
 
 @Preview(showBackground = true)
