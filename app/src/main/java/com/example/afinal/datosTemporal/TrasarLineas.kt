@@ -3,9 +3,10 @@ package com.example.afinal.datosTemporal
 import com.google.firebase.firestore.GeoPoint
 
 object TrasarLineas {
-    fun  coodenadas(){
 
-        val puntos = listOf(
+    fun coordenadas(): List<GeoPoint> {
+
+        return listOf(
             GeoPoint(12.003865597665666, -83.7829662407249),
             GeoPoint(12.003845110394082, -83.78307923494064),
             GeoPoint(12.003824622848498, -83.78319829238812),
@@ -147,8 +148,6 @@ object TrasarLineas {
             GeoPoint(12.028531548705686, -83.7701234959391),
             GeoPoint(12.028490271463781, -83.7700959778511)
         )
-
     }
-
 
 }
