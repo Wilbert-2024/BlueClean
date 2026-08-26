@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import java.util.*
 
 object GestionAlarmas {
@@ -24,6 +25,7 @@ object GestionAlarmas {
         prefs.putString("horaDia", horaDia)
         prefs.putBoolean("diaActivo", diaActivo)
         prefs.apply()
+        Log.d("GestionAlarmas", "Programando: Noche=$nocheActiva ($horaNoche), Dia=$diaActivo ($horaDia)")
 
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         cancelarAlarmas(context)
@@ -45,8 +47,11 @@ object GestionAlarmas {
             set(Calendar.HOUR_OF_DAY, partes[0].toInt())
             set(Calendar.MINUTE, partes[1].toInt())
             set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
             if (before(Calendar.getInstance())) { add(Calendar.DATE, 1) }
         }
+
+        Log.d("GestionAlarmas", "Alarma $id programada para: ${calendar.time}")
 
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("titulo", titulo)
