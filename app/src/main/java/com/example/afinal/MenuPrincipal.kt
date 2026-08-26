@@ -55,47 +55,52 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
 
     Scaffold(
         bottomBar = {
-
-            NavigationBar(  containerColor = Color.White, tonalElevation = 8.dp ) {
-                val navBackStackEntry by controladorNav.currentBackStackEntryAsState()
-                val rutaActual = navBackStackEntry?.destination?.route
-
-                itemsMenu.forEach { item ->
-                    NavigationBarItem(
-                        icon = { Icon(item.icono, contentDescription = item.titulo) },
-                        label = { Text(text = item.titulo, fontSize = 11.sp) },
-                        selected = rutaActual == item.ruta,
-
-                        onClick = {
-                            controladorNav.navigate(item.ruta) {
-
-                                popUpTo(controladorNav.graph.findStartDestination().id) {
-                                    saveState = true
+            val navBackStackEntry by controladorNav.currentBackStackEntryAsState()
+            val rutaActual = navBackStackEntry?.destination?.route
+            
+            // Solo mostrar la barra de navegación si NO estamos en la pantalla de denuncia
+            if (rutaActual != "denuncia") {
+                NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
+                    itemsMenu.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icono, contentDescription = item.titulo) },
+                            label = { Text(text = item.titulo, fontSize = 11.sp) },
+                            selected = rutaActual == item.ruta,
+                            onClick = {
+                                controladorNav.navigate(item.ruta) {
+                                    popUpTo(controladorNav.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = Colores.VerdePrincipal,
-                            selectedTextColor = Colores.VerdePrincipal,
-                            unselectedIconColor = Color.Gray,
-                            unselectedTextColor = Color.Gray,
-                            indicatorColor = Colores.VerdeClaro
+                            },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = Colores.VerdePrincipal,
+                                selectedTextColor = Colores.VerdePrincipal,
+                                unselectedIconColor = Color.Gray,
+                                unselectedTextColor = Color.Gray,
+                                indicatorColor = Colores.VerdeClaro
+                            )
                         )
-                    )
+                    }
                 }
             }
         }
     ) { paddingInterno ->
         NavHost(navController = controladorNav, startDestination = "inicio", modifier = Modifier.padding(paddingInterno)) {
-            composable("inicio") { Inicio() }
+            composable("inicio") { 
+                Inicio(onNavegarADenuncia = { controladorNav.navigate("denuncia") }) 
+            }
             composable("mapa") { PantallaMapa() }
             composable("avisos") { Prueba(onRegresarAlInicio) }
             composable("calendario") {
                 Calendario(barrio = "Santa Rosa", diasRuta = java.util.EnumSet.of(java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
             }
             composable("perfil") { Prueba(onRegresarAlInicio) }
+            composable("denuncia") { 
+                Denuncia(onRegresar = { controladorNav.popBackStack() }) 
+            }
         }
     }
 }

@@ -1,9 +1,17 @@
 ﻿package com.example.afinal
 
 import android.os.Bundle
+import android.os.Build
+import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.media.RingtoneManager
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.navigation.compose.NavHost
@@ -18,8 +26,16 @@ import com.example.afinal.datos.mensajeria.PantallaMensajeGlobal
 import com.example.afinal.ui.theme.FinalTheme
 
 class MainActivity : ComponentActivity() {
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Log.d("MainActivity", "Iniciando app, SDK Version: ${Build.VERSION.SDK_INT}")
+        crearCanalNotificaciones()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Log.d("MainActivity", "Solicitando permiso de notificaciones...")
+            requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
         enableEdgeToEdge()
         setContent {
             FinalTheme {
@@ -68,6 +84,25 @@ class MainActivity : ComponentActivity() {
                     PantallaMensajeGlobal()
                 }
             }
+        }
+    }
+
+    private fun crearCanalNotificaciones() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val soundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            
+            // Usamos un nuevo ID (v3) para forzar a Android a aplicar los cambios de sonido
+            val channelId = "canal_recoleccion_v3"
+            val channel = NotificationChannel(channelId, "Recordatorios de Recolección", NotificationManager.IMPORTANCE_HIGH).apply {
+                description = "Avisos importantes con sonido de alarma"
+                enableLights(true)
+                enableVibration(true)
+                vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setSound(soundUri, null)
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            notificationManager.createNotificationChannel(channel)
         }
     }
 }
