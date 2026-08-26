@@ -28,7 +28,7 @@ enum class EstadoPuntoRecorrido { COMPLETADO, ACTUAL, PROXIMO }
 data class PuntoRecorrido(val nombre: String, val estado: EstadoPuntoRecorrido)
 
 @Composable
-fun SelectorRecorrido(mostrar: Boolean, onDismiss: () -> Unit) {
+fun VisualizadorRuta(mostrar: Boolean, onDismiss: () -> Unit) {
     val puntos = listOf(
         PuntoRecorrido("San Pedro", EstadoPuntoRecorrido.COMPLETADO),
         PuntoRecorrido("La Morenita", EstadoPuntoRecorrido.COMPLETADO),
