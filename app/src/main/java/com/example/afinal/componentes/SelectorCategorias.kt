@@ -21,6 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.afinal.datos.Colores
 
 data class CategoriaIncidencia(val nombre: String, val icono: ImageVector)
@@ -38,7 +40,6 @@ object ListadoCategorias {
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SelectorCategorias(
     mostrar: Boolean,
@@ -46,25 +47,35 @@ fun SelectorCategorias(
     onSeleccion: (String) -> Unit
 ) {
     if (mostrar) {
-        ModalBottomSheet(
+        Dialog(
             onDismissRequest = onDismiss,
-            containerColor = Color.White,
-            dragHandle = { Box(Modifier.padding(vertical = 12.dp).size(40.dp, 4.dp).clip(CircleShape).background(Colores.GrisBorde)) }
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
-            Column(Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 32.dp)) {
-                Text("¿Qué deseas reportar?", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Colores.VerdePrincipal, modifier = Modifier.padding(bottom = 20.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(0.9f).padding(vertical = 24.dp),
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
+            ) {
+                Column(Modifier.padding(24.dp)) {
+                    Text("¿Qué deseas reportar?", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Colores.VerdePrincipal, modifier = Modifier.padding(bottom = 20.dp))
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.heightIn(max = 500.dp)
-                ) {
-                    items(ListadoCategorias.lista) { categoria ->
-                        CardCategoria(categoria) {
-                            onSeleccion(categoria.nombre)
-                            onDismiss()
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(2),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.heightIn(max = 450.dp)
+                    ) {
+                        items(ListadoCategorias.lista) { categoria ->
+                            CardCategoria(categoria) {
+                                onSeleccion(categoria.nombre)
+                                onDismiss()
+                            }
                         }
+                    }
+                    
+                    TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.End).padding(top = 16.dp)) {
+                        Text("CANCELAR", color = Colores.TextoGris, fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -75,18 +86,18 @@ fun SelectorCategorias(
 @Composable
 fun CardCategoria(categoria: CategoriaIncidencia, onClick: () -> Unit) {
     Box(
-        modifier = Modifier.fillMaxWidth().height(110.dp).clip(RoundedCornerShape(20.dp))
+        modifier = Modifier.fillMaxWidth().height(100.dp).clip(RoundedCornerShape(20.dp))
             .background(Colores.VerdeFondoSuave)
             .clickable { onClick() }
-            .padding(12.dp),
+            .padding(8.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(Modifier.size(44.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
-                Icon(categoria.icono, null, tint = Colores.VerdePrincipal, modifier = Modifier.size(24.dp))
+            Box(Modifier.size(40.dp).background(Color.White, CircleShape), contentAlignment = Alignment.Center) {
+                Icon(categoria.icono, null, tint = Colores.VerdePrincipal, modifier = Modifier.size(22.dp))
             }
             Spacer(Modifier.height(8.dp))
-            Text(categoria.nombre, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Colores.VerdePillBarrio, textAlign = TextAlign.Center, lineHeight = 16.sp)
+            Text(categoria.nombre, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Colores.VerdePillBarrio, textAlign = TextAlign.Center, lineHeight = 14.sp)
         }
     }
 }
