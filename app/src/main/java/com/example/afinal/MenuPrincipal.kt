@@ -93,9 +93,9 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
                 Inicio(onNavegarADenuncia = { controladorNav.navigate("denuncia") }) 
             }
             composable("mapa") { PantallaMapa() }
-            composable("avisos") { Prueba(onRegresarAlInicio) }
+            composable("avisos") { PantallaNotificaciones() }
             composable("calendario") {
-                Calendario(barrio = "Santa Rosa", diasRuta = java.util.EnumSet.of(java.time.DayOfWeek.TUESDAY, java.time.DayOfWeek.THURSDAY, java.time.DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
+                Calendario()
             }
             composable("perfil") { Prueba(onRegresarAlInicio) }
             composable("denuncia") { 
