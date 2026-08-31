@@ -92,7 +92,7 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
             composable("inicio") { 
                 Inicio(onNavegarADenuncia = { controladorNav.navigate("denuncia") }) 
             }
-            composable("mapa") { PantallaMapa() }
+            composable("mapa") { Mapa(onAtras = { controladorNav.popBackStack() }) }
             composable("avisos") { PantallaNotificaciones() }
             composable("calendario") {
                 Calendario()
