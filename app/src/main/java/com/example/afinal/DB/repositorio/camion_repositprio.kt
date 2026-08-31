@@ -46,7 +46,9 @@ object camion_repositprio {
         Conexion.db.collection(Coleccion).document(id).delete()
     }
 
-    // --- FLUJO TIEMPO REAL: Vigilar el camión que tenga asignada esta ruta ---
+    /**
+     * Vigila el estado del camión asignado a una ruta específica.
+     */
     fun observarCamionPorRuta(rutaId: String, onUpdate: (Boolean) -> Unit): ListenerRegistration {
         return Conexion.db.collection(Coleccion)
             .whereEqualTo("ruta_id", rutaId)
@@ -60,6 +62,19 @@ object camion_repositprio {
                 if (camionDoc != null) {
                     val estado = camionDoc.getBoolean("Estado") ?: false
                     onUpdate(estado)
+                }
+            }
+    }
+
+    // --- FLUJO MAPA: Vigilar la ubicación del camión en tiempo real ---
+    fun observarUbicacionReal(rutaId: String, onUpdate: (GeoPoint?) -> Unit): ListenerRegistration {
+        return Conexion.db.collection(Coleccion)
+            .whereEqualTo("ruta_id", rutaId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                val camionDoc = snapshot?.documents?.firstOrNull()
+                if (camionDoc != null) {
+                    onUpdate(camionDoc.getGeoPoint("Ubicacion_actual"))
                 }
             }
     }
