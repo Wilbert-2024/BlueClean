@@ -1,10 +1,15 @@
 package com.example.afinal
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
@@ -16,26 +21,28 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.afinal.DB.repositorio.ExportadorDatos
+import com.example.afinal.DB.vistaModal.Inicio_vistaModal
 import com.example.afinal.componentes.IndicadorRuta
 import com.example.afinal.componentes.VisualizadorRuta
 import com.example.afinal.datos.Colores
-import com.example.afinal.ui.theme.FinalTheme
-import com.example.afinal.DB.vistaModal.Inicio_vistaModal
-import com.example.afinal.DB.repositorio.ExportadorDatos
+import com.example.afinal.ui.theme.*
 
-val VerdeOscuroGrad = Color(0xFF00381F)
-val VerdeLive = Color(0xFF4ADE80)
-val GrisSutil = Color(0xFF8E8E93)
-val NegroElegante = Color(0xFF1C1C1E)
+// --- COLORES LOCALES PARA LA INTERFAZ ---
+private val VerdeOscuroGrad = Color(0xFF004527)
+private val VerdeLive = Color(0xFF4CAF50)
+private val GrisSutil = Color(0xFF757575)
+private val NegroElegante = Color(0xFF212121)
 
 @Composable
 fun Inicio(onNavegarADenuncia: () -> Unit) {
@@ -49,12 +56,10 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
 
     LaunchedEffect(Unit) {
         vm.cargarDatos(context)
+        vm.iniciarGpsUsuario(context)
         estaCargando = false
     }
 
-    // --- FLUJO TIEMPO REAL: Los datos de vm.estadoServicio ahora se actualizan solos gracias al VistaModal ---
-
-    // Usamos la lista real de puntos que viene de la memoria
     VisualizadorRuta(
         mostrar = mostrarRuta, 
         onDismiss = { mostrarRuta = false },
@@ -78,6 +83,7 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                         Text("¡Hola, ${vm.nombreUsuario}!", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, letterSpacing = (-0.5).sp)
                         Text("Bienvenido de nuevo a ${vm.barrioUsuario}", fontSize = 13.sp, color = Color.White.copy(0.7f))
                     }
+
                     Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(0.15f)).border(1.dp, Color.White.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.size(20.dp))
                         Box(modifier = Modifier.size(8.dp).align(Alignment.TopEnd).padding(2.dp).clip(CircleShape).background(VerdeLive))
@@ -94,7 +100,6 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                         Image(painter = painterResource(id = R.drawable.camion), null, Modifier.size(100.dp, 60.dp).padding(vertical = 4.dp), contentScale = ContentScale.Fit)
                         Text(vm.nombreUnidad, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
                         
-                        // Indicador de ruta con datos reales de origen y destino
                         IndicadorRuta(
                             origen = vm.origenDestino.first, 
                             destino = vm.origenDestino.second, 
@@ -122,8 +127,19 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text("Próxima llegada", fontSize = 12.sp, color = GrisSutil)
-                                Text(vm.horarioRuta, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
+                                Text("Próxima llegada estimada", fontSize = 12.sp, color = GrisSutil)
+                                
+                                val textoLlegada = if (vm.estadoServicio) {
+                                    when (vm.minutosRestantes) {
+                                        -1 -> "Ya pasó por tu casa"
+                                        0 -> "¡Llegando a tu casa!"
+                                        else -> if (vm.minutosRestantes > 0) "En ${vm.minutosRestantes} min aprox." else vm.horarioRuta
+                                    }
+                                } else {
+                                    vm.horarioRuta
+                                }
+                                
+                                Text(textoLlegada, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
                             }
                         }
                     }
@@ -171,7 +187,6 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(32.dp))
                 
-                // BOTÓN DE DEBUG TEMPORAL
                 Button(
                     onClick = { ExportadorDatos.exportarTodoALogcat() },
                     modifier = Modifier.fillMaxWidth().height(40.dp),
