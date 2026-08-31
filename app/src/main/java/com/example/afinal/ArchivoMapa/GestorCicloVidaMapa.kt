@@ -18,7 +18,7 @@ import com.google.android.gms.maps.MapView
 @Composable
 fun recordarVistaMapaConCicloVida(): MapView {
     val contexto = LocalContext.current
-    val dueñoCicloVida = LocalLifecycleOwner.current
+    val cicloVidaOwner = LocalLifecycleOwner.current
     
     // Creamos la vista del mapa una sola vez y la recordamos
     val vistaMapa = remember { 
@@ -28,23 +28,21 @@ fun recordarVistaMapaConCicloVida(): MapView {
     }
 
     // Escuchamos los cambios del teléfono (pausa, cierre, etc.)
-    DisposableEffect(dueñoCicloVida.lifecycle, vistaMapa) {
+    DisposableEffect(cicloVidaOwner.lifecycle, vistaMapa) {
         val observador = LifecycleEventObserver { _, evento ->
-            when (event = evento) {
+            when (evento) {
                 Lifecycle.Event.ON_START -> vistaMapa.onStart()
                 Lifecycle.Event.ON_RESUME -> vistaMapa.onResume()
                 Lifecycle.Event.ON_PAUSE -> vistaMapa.onPause()
                 Lifecycle.Event.ON_STOP -> vistaMapa.onStop()
-                Lifecycle.Event.ON_DESTROY -> vistaMapa.onDestroy()
                 else -> Unit
             }
         }
         
-        dueñoCicloVida.lifecycle.addObserver(observador)
+        cicloVidaOwner.lifecycle.addObserver(observador)
 
-        // Limpieza cuando el componente se destruye
         onDispose {
-            dueñoCicloVida.lifecycle.removeObserver(observador)
+            cicloVidaOwner.lifecycle.removeObserver(observador)
             vistaMapa.onDestroy()
         }
     }
