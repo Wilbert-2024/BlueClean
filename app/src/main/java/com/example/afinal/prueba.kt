@@ -15,6 +15,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.afinal.DB.repositorio.Feriado_Repositorio
 import com.example.afinal.DB.vistaModal.PuntoTrasarRuta_vistModal
 import com.example.afinal.datos.Colores
 
@@ -60,6 +61,17 @@ fun Prueba(onRegresar: () -> Unit,  puntoViewModel: PuntoTrasarRuta_vistModal = 
 
             ) {
                 Text("enviar coordenadas")
+            }
+
+            Spacer(Modifier.height(32.dp))
+
+            Button(
+                onClick = { Feriado_Repositorio.inicializarFeriados() },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+            ) {
+                Text("INICIALIZAR FERIADOS EN FIREBASE", fontWeight = FontWeight.Bold, color = Color.White)
             }
 
         }
