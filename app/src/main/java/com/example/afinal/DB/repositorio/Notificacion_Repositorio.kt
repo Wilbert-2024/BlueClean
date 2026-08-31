@@ -13,7 +13,9 @@ object Notificacion_Repositorio {
             .orderBy("Fecha_Hora", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { result ->
-                val lista = result.toObjects(Notificacion_Modal.Datos::class.java)
+                val lista = result.documents.mapNotNull { doc ->
+                    doc.toObject(Notificacion_Modal.Datos::class.java)?.copy(id = doc.id)
+                }
                 onSuccess(lista)
             }
             .addOnFailureListener {

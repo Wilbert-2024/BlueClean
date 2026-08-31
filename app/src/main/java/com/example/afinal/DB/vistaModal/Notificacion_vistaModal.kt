@@ -12,10 +12,12 @@ import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
 class Notificacion_vistaModal : ViewModel() {
     var listaNotificaciones by mutableStateOf<List<Notificacion_Modal.Datos>>(emptyList())
     var estaCargando by mutableStateOf(true)
+    var idsVistos by mutableStateOf<Set<String>>(emptySet())
 
     fun cargarNotificaciones(context: Context) {
         val datos = datosEnMemoria.obtener(context)
         val rutaId = datos?.RutaId ?: ""
+        idsVistos = datosEnMemoria.obtenerVistos(context)
 
         if (rutaId.isNotEmpty()) {
             Notificacion_Repositorio.obtenerPorRuta(rutaId) { lista ->
@@ -25,5 +27,10 @@ class Notificacion_vistaModal : ViewModel() {
         } else {
             estaCargando = false
         }
+    }
+
+    fun marcarVisto(context: Context, id: String) {
+        datosEnMemoria.marcarComoVisto(context, id)
+        idsVistos = idsVistos + id
     }
 }
