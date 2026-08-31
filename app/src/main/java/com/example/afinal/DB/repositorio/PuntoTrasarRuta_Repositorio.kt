@@ -61,7 +61,7 @@ object PuntoTrasarRuta_Repositorio {
             .addOnSuccessListener { doc ->
                 if (doc.exists()){
                     val datos = doc.toObject(PuntoTrasarRuta_Modal.Datos::class.java)
-                    onSuccess(datos?.Coordenadas?: emptyList())
+                    onSuccess(datos?.coordenadas?: emptyList())
 
                 } else{ onSuccess(emptyList()) }
             }
