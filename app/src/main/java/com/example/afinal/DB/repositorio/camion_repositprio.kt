@@ -6,10 +6,8 @@ import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ListenerRegistration
 import android.util.Log
 
-
 object camion_repositprio {
     private const val Coleccion = "Camiones"
-
 
     fun insertar(Camion: camion_Modal.DatosGenerales){
         Conexion.db.collection(Coleccion).add(Camion)
@@ -36,7 +34,6 @@ object camion_repositprio {
             documento -> result(documento.getGeoPoint("Ubicacion_actual"))
         }
     }
-
 
     fun actualizar(id: String, camion: camion_Modal){
         Conexion.db.collection(Coleccion).document(id).set(camion)
@@ -79,10 +76,20 @@ object camion_repositprio {
             }
     }
 
-
-
-
-
-
-
+    /**
+     * Vigila la ubicación Y la velocidad del camión al mismo tiempo.
+     */
+    fun observarUbicacionYVelocidad(rutaId: String, onUpdate: (GeoPoint?, Double) -> Unit): ListenerRegistration {
+        return Conexion.db.collection(Coleccion)
+            .whereEqualTo("ruta_id", rutaId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) return@addSnapshotListener
+                val camionDoc = snapshot?.documents?.firstOrNull()
+                if (camionDoc != null) {
+                    val ubicacion = camionDoc.getGeoPoint("Ubicacion_actual")
+                    val velocidad = camionDoc.getDouble("Velocidad") ?: 0.0
+                    onUpdate(ubicacion, velocidad)
+                }
+            }
+    }
 }
