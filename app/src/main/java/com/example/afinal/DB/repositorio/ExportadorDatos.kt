@@ -19,7 +19,8 @@ object ExportadorDatos {
             "Notificaciones",
             "Punto_trasar_ruta",
             "Puntos_referencia",
-            "Rutas"
+            "Rutas",
+            "Feriados"
         )
         var procesadas = 0
 
