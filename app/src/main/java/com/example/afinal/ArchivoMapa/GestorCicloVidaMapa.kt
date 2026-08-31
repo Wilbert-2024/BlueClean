@@ -1,0 +1,53 @@
+package com.example.afinal.ArchivoMapa
+
+import android.os.Bundle
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.google.android.gms.maps.MapView
+
+/**
+ * Función encargada de gestionar la "vida" del mapa en la pantalla.
+ * Asegura que el mapa se pause, se reanude o se destruya cuando el usuario
+ * sale de la aplicación o cambia de pantalla, ahorrando batería y memoria.
+ */
+@Composable
+fun recordarVistaMapaConCicloVida(): MapView {
+    val contexto = LocalContext.current
+    val dueñoCicloVida = LocalLifecycleOwner.current
+    
+    // Creamos la vista del mapa una sola vez y la recordamos
+    val vistaMapa = remember { 
+        MapView(contexto).apply { 
+            onCreate(Bundle()) 
+        } 
+    }
+
+    // Escuchamos los cambios del teléfono (pausa, cierre, etc.)
+    DisposableEffect(dueñoCicloVida.lifecycle, vistaMapa) {
+        val observador = LifecycleEventObserver { _, evento ->
+            when (event = evento) {
+                Lifecycle.Event.ON_START -> vistaMapa.onStart()
+                Lifecycle.Event.ON_RESUME -> vistaMapa.onResume()
+                Lifecycle.Event.ON_PAUSE -> vistaMapa.onPause()
+                Lifecycle.Event.ON_STOP -> vistaMapa.onStop()
+                Lifecycle.Event.ON_DESTROY -> vistaMapa.onDestroy()
+                else -> Unit
+            }
+        }
+        
+        dueñoCicloVida.lifecycle.addObserver(observador)
+
+        // Limpieza cuando el componente se destruye
+        onDispose {
+            dueñoCicloVida.lifecycle.removeObserver(observador)
+            vistaMapa.onDestroy()
+        }
+    }
+    
+    return vistaMapa
+}
