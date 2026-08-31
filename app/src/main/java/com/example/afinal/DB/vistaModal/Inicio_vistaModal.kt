@@ -1,6 +1,7 @@
 package com.example.afinal.DB.vistaModal
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -8,6 +9,10 @@ import androidx.lifecycle.ViewModel
 import com.example.afinal.componentes.EstadoPuntoRecorrido
 import com.example.afinal.componentes.PuntoRecorrido
 import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
+import com.example.afinal.DB.repositorio.camion_repositprio
+import com.example.afinal.DB.repositorio.Feriado_Repositorio
+import com.google.firebase.firestore.ListenerRegistration
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -19,6 +24,9 @@ class Inicio_vistaModal : ViewModel() {
     var horarioRuta by mutableStateOf("")
     var puntosRutaParaVisualizador by mutableStateOf<List<PuntoRecorrido>>(emptyList())
     var origenDestino by mutableStateOf(Pair("Origen", "Destino"))
+    
+    // --- FLUJO TIEMPO REAL: Registro para cancelar la vigilancia al cerrar la pantalla ---
+    private var rutaListener: ListenerRegistration? = null
 
     fun cargarDatos(context: Context) {
         val datos = datosEnMemoria.obtener(context) ?: return
@@ -61,8 +69,55 @@ class Inicio_vistaModal : ViewModel() {
                 origenDestino = Pair(listaTemporal.first().nombre, listaTemporal.last().nombre)
             }
 
+            // --- FLUJO TIEMPO REAL: Iniciar la vigilancia del Estado ---
+            iniciarVigilanciaEstado(datos.RutaId)
+            
+            // --- SINCRONIZACIÓN: Actualizar feriados en segundo plano ---
+            sincronizarFeriados(context)
+
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun sincronizarFeriados(context: Context) {
+        Feriado_Repositorio.obtenerTodos { lista ->
+            try {
+                val arrayJson = JSONArray()
+                lista.forEach { f ->
+                    val obj = JSONObject().apply {
+                        put("nombre", f.nombre); put("dia", f.dia)
+                        put("mes", f.mes); put("anio", f.anio)
+                    }
+                    arrayJson.put(obj)
+                }
+                val nuevoJson = arrayJson.toString()
+                val actualJson = datosEnMemoria.obtener(context)?.FeriadosJson ?: "[]"
+                
+                // Solo guardamos si hay cambios reales para ahorrar escritura en disco
+                if (nuevoJson != actualJson) {
+                    Log.d("Inicio_vistaModal", "Feriados actualizados desde Firebase")
+                    datosEnMemoria.guardarFeriadosLocal(context, nuevoJson)
+                }
+            } catch (e: Exception) {
+                Log.e("Inicio_vistaModal", "Error sincronizando feriados: ${e.message}")
+            }
+        }
+    }
+
+    private fun iniciarVigilanciaEstado(rutaId: String) {
+        rutaListener?.remove()
+        
+        // Ahora vigilamos la colección "Camiones" buscando el que tenga el ruta_id correspondiente
+        rutaListener = camion_repositprio.observarCamionPorRuta(rutaId) { nuevoEstado ->
+            Log.d("Inicio_vistaModal", "¡Cambio en el camión detectado! Estado: $nuevoEstado")
+            estadoServicio = nuevoEstado
+        }
+    }
+
+    // --- FLUJO TIEMPO REAL: Función para limpiar recursos al salir de la pantalla ---
+    override fun onCleared() {
+        super.onCleared()
+        rutaListener?.remove()
     }
 }
