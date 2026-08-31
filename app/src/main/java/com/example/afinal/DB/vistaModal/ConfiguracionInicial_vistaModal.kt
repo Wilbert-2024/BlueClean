@@ -25,6 +25,16 @@ class ConfiguracionInicial_vistaModal : ViewModel() {
     var estaCargando by mutableStateOf(false)
     var mostrarSelectorLugares by mutableStateOf(false)
 
+    fun cargarDatosExistentes(context: Context) {
+        val datos = datosEnMemoria.obtener(context)
+        if (datos != null) {
+            nombreUsuario = datos.NomUsuario
+            barrioSeleccionado = datos.Barrio
+            lugarSeleccionado = datos.LugarReferencia
+            rutaIdSeleccionada = datos.RutaId
+        }
+    }
+
     fun seleccionarBarrio(barrio: String) {
         barrioSeleccionado = barrio
         estaCargando = true
