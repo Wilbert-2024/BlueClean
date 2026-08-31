@@ -11,7 +11,7 @@ object ListadoBarrios {
         "Pointing",
         "Nueva York",
         "Loma Fresca",
-        "San pedro",
+        "San Pedro",
         "Teodoro Martines",
         "Biholting",
         "Punta Fria"
