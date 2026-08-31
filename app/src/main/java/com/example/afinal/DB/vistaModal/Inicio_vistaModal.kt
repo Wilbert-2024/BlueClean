@@ -109,7 +109,7 @@ class Inicio_vistaModal : ViewModel() {
         rutaListener?.remove()
         
         // Ahora vigilamos la colección "Camiones" buscando el que tenga el ruta_id correspondiente
-        rutaListener = camion_repositprio.observarCamionPorRuta(rutaId) { nuevoEstado ->
+        rutaListener = com.example.afinal.DB.repositorio.camion_repositprio.observarCamionPorRuta(rutaId) { nuevoEstado ->
             Log.d("Inicio_vistaModal", "¡Cambio en el camión detectado! Estado: $nuevoEstado")
             estadoServicio = nuevoEstado
         }
