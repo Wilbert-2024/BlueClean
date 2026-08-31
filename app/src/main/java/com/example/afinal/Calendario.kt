@@ -10,25 +10,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.afinal.DB.vistaModal.Calendario_vistaModal
 import com.example.afinal.datos.Calendario.DiaRecorrido
 import com.example.afinal.datos.Calendario.FechaHora
-import com.example.afinal.datos.Calendario.GeneradorRecorridos
+import com.example.afinal.datos.Calendario.GeneradorFechasCalendario
 import com.example.afinal.datos.Colores
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -39,7 +38,6 @@ import java.util.Locale
 private val idiomaEspanol = Locale.forLanguageTag("es-NI")
 private val formatoMes = DateTimeFormatter.ofPattern("MMM", idiomaEspanol)
 
-// Función para obtener el nombre corto del día de la semana
 private fun obtenerDiaCorto(diaSemana: DayOfWeek): String {
     return when (diaSemana) {
         DayOfWeek.MONDAY -> "LUN"; DayOfWeek.TUESDAY -> "MAR"; DayOfWeek.WEDNESDAY -> "MIÉ"
@@ -50,61 +48,71 @@ private fun obtenerDiaCorto(diaSemana: DayOfWeek): String {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Calendario(  barrio: String, diasRuta: Set<DayOfWeek>,
-    horaRutaStr: String, fechasFeriadas: Set<LocalDate> = emptySet(),
-    onNotificaciones: () -> Unit = {}, onRecordar: (DiaRecorrido) -> Unit = {},
-    horaFinRutaStr: String, onVerAvisos: () -> Unit = {}
+fun Calendario(
+    onNotificaciones: () -> Unit = {},
+    onRecordar: (DiaRecorrido) -> Unit = {},
+    onVerAvisos: () -> Unit = {}
 ) {
-    // Estado para la ventana de alarmas y cálculos de tiempo
+    val context = LocalContext.current
+    val vm = remember { Calendario_vistaModal() }
     var mostrarAlarma by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
-    val horaRuta = try { LocalTime.parse(horaRutaStr) } catch (_: Exception) { LocalTime.of(6, 0) }
-    val horaFinRuta = try { LocalTime.parse(horaFinRutaStr) } catch (_: Exception) { LocalTime.of(12, 0) }
-    val fechas = GeneradorRecorridos.generar(diasRuta, horaRuta, 3, fechasFeriadas)
 
-    Box(modifier = Modifier.fillMaxSize().background(Colores.BlancoTarjeta).statusBarsPadding()) {
-        // Franja verde superior
-        Box(modifier = Modifier.fillMaxWidth().height(180.dp).background(Colores.VerdeBosque))
+    LaunchedEffect(Unit) { vm.cargarDatos(context) }
 
-        Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-            EncabezadoCalendario(onNotificaciones = onNotificaciones)
-            Spacer(modifier = Modifier.height(20.dp))
+    if (vm.estaCargando) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator(color = Colores.VerdePrincipal) }
+    } else {
+        val horaRuta = try { LocalTime.parse(vm.horaInicio) } catch (_: Exception) { LocalTime.of(6, 0) }
+        val horaFinRuta = try { LocalTime.parse(vm.horaFin) } catch (_: Exception) { LocalTime.of(12, 0) }
+        val fechas = GeneradorFechasCalendario.generar(vm.diasRuta, horaRuta, 3, vm.fechasFeriadas)
 
-            Box(modifier = Modifier.fillMaxWidth()) {
-                // Cuerpo con diseño de hoja blanca redondeada
-                Column(modifier = Modifier.fillMaxWidth().padding(top = 30.dp).background(color = Colores.BlancoTarjeta, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)).padding(bottom = 100.dp)) {
-                    Spacer(modifier = Modifier.height(40.dp))
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        TarjetaResumenRuta(horaRuta, horaFinRuta)
-                        Spacer(modifier = Modifier.height(24.dp))
-                        TituloSeccion(icono = Icons.Default.DateRange, titulo = "Próximas recolecciones")
-                        Spacer(modifier = Modifier.height(16.dp))
-                        fechas.forEachIndexed { index, fecha ->
-                            TarjetaRecoleccionCompacta(recorrido = fecha, onRecordar = { mostrarAlarma = true; onRecordar(fecha) })
-                            if (index < fechas.lastIndex) { Spacer(modifier = Modifier.height(16.dp)) }
+        Box(modifier = Modifier.fillMaxSize().background(Colores.VerdeBosque)) {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                EncabezadoCalendario(horaInicio = horaRuta, horaFin = horaFinRuta, onNotificaciones = onNotificaciones)
+                
+                Box(modifier = Modifier.fillMaxWidth().padding(top = 20.dp)) {
+                    Column(modifier = Modifier.fillMaxWidth().background(color = Color.White, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)).padding(bottom = 100.dp)) {
+                        Spacer(modifier = Modifier.height(35.dp))
+                        Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+                            TituloSeccion(icono = Icons.Default.DateRange, titulo = "Próximas recolecciones")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            fechas.forEachIndexed { index, fecha ->
+                                TarjetaRecoleccionCompacta(recorrido = fecha, onRecordar = { mostrarAlarma = true; onRecordar(fecha) })
+                                if (index < fechas.lastIndex) { Spacer(modifier = Modifier.height(16.dp)) }
+                            }
+                            Spacer(modifier = Modifier.height(24.dp))
+                            TarjetaInformacion(onVerAvisos = onVerAvisos)
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        TarjetaInformacion(onVerAvisos = onVerAvisos)
                     }
                 }
-                // Píldora de barrio centrada y solapada
-                Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), contentAlignment = Alignment.Center) { TarjetaBarrio(barrio = barrio) }
             }
-        }
-        
-        if (mostrarAlarma) {
-            ModalBottomSheet(onDismissRequest = { mostrarAlarma = false }, sheetState = sheetState, containerColor = Color.Transparent, dragHandle = null) {
-                DialogoConfigurarRecordatorio(onDismiss = { mostrarAlarma = false }, onGuardar = { mostrarAlarma = false })
+            if (mostrarAlarma) {
+                ModalBottomSheet(onDismissRequest = { mostrarAlarma = false }, sheetState = sheetState, containerColor = Color.Transparent, dragHandle = null) {
+                    DialogoConfigurarRecordatorio(onDismiss = { mostrarAlarma = false }, onGuardar = { mostrarAlarma = false })
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EncabezadoCalendario(onNotificaciones: () -> Unit) {
-    Box(modifier = Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp)) {
-        Text(text = "Calendario", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Colores.BlancoTarjeta, modifier = Modifier.align(Alignment.Center))
-        IconButton(onClick = onNotificaciones, modifier = Modifier.align(Alignment.CenterEnd)) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Colores.BlancoTarjeta, modifier = Modifier.size(28.dp)) }
+private fun EncabezadoCalendario(horaInicio: LocalTime, horaFin: LocalTime, onNotificaciones: () -> Unit) {
+    val fmt = DateTimeFormatter.ofPattern("H:mm")
+    Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
+        Box(modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 8.dp).offset(y = (-8).dp)) {
+            Text(text = "Calendario", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.align(Alignment.Center))
+            IconButton(onClick = onNotificaciones, modifier = Modifier.align(Alignment.CenterEnd)) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White, modifier = Modifier.size(24.dp)) }
+        }
+        
+        Spacer(modifier = Modifier.height(2.dp))
+        
+        Row(modifier = Modifier.align(Alignment.CenterHorizontally).background(Color.White.copy(0.12f), RoundedCornerShape(50)).padding(horizontal = 14.dp, vertical = 5.dp).offset(y = (-4).dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.AccessTime, null, tint = Colores.VerdeVibrante, modifier = Modifier.size(16.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = "Horario: ", fontSize = 13.sp, color = Color.White.copy(0.8f))
+            Text(text = "${horaInicio.format(fmt)} - ${horaFin.format(fmt)}", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
+        }
     }
 }
 
@@ -142,19 +150,38 @@ private fun TituloSeccion(icono: androidx.compose.ui.graphics.vector.ImageVector
 
 @Composable
 private fun TarjetaRecoleccionCompacta(recorrido: DiaRecorrido, onRecordar: () -> Unit = {}) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = Colores.BlancoTarjeta), elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)) {
-        val hoy = FechaHora.obtenerFechaLocal(); val yaPaso = recorrido.fecha.isBefore(hoy)
-        Row(modifier = Modifier.fillMaxWidth().padding(20.dp).height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
-            CajaFecha(recorrido = recorrido)
-            Spacer(modifier = Modifier.width(16.dp))
-            Box(modifier = Modifier.width(2.dp).fillMaxHeight().background(if(yaPaso) Colores.GrisSeparador else Colores.VerdeBosque))
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceBetween) {
-                Text(text = if (recorrido.esFeriado) "Día feriado" else "Recolección general", fontSize = 17.sp, fontWeight = FontWeight.Bold, color = if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeBosque)
-                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomEnd) { EstadoRecorrido(recorrido = recorrido) }
+    val hoy = FechaHora.obtenerFechaLocal()
+    val yaPaso = recorrido.fecha.isBefore(hoy)
+    val colorEstado = if (recorrido.esFeriado) Colores.RojoFeriado else if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeSecundario
+
+    Card(
+        modifier = Modifier.fillMaxWidth().alpha(if(yaPaso) 0.6f else 1f),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Colores.BlancoTarjeta),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = if(!yaPaso && recorrido.esFeriado) BorderStroke(1.dp, Colores.RojoFeriado.copy(0.3f)) else null
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min), verticalAlignment = Alignment.CenterVertically) {
+            // Franja lateral indicadora
+            Box(modifier = Modifier.width(6.dp).fillMaxHeight().background(colorEstado))
+            
+            Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                CajaFecha(recorrido = recorrido)
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    if (recorrido.esFeriado && recorrido.nombreFeriado != null) {
+                        Text(text = recorrido.nombreFeriado!!, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Colores.RojoFeriado, modifier = Modifier.padding(bottom = 2.dp))
+                    }
+                    Text(text = if (recorrido.esFeriado) "Día festivo" else "Recolección Normal", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeBosque)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    EstadoRecorrido(recorrido = recorrido)
+                }
+                
+                IconButton(onClick = onRecordar, modifier = Modifier.size(40.dp).background(if(yaPaso) Color.Transparent else Colores.VerdeFondoSuave, CircleShape), enabled = !yaPaso) {
+                    Icon(imageVector = if(yaPaso) Icons.Default.CheckCircle else Icons.Default.NotificationsActive, contentDescription = "Aviso", tint = if (yaPaso) Colores.VerdeSecundario.copy(0.5f) else Colores.VerdeSecundario)
+                }
             }
-            Spacer(modifier = Modifier.width(8.dp))
-            IconButton(onClick = onRecordar, modifier = Modifier.size(36.dp), enabled = !yaPaso) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Aviso", tint = if (yaPaso) Colores.TextoGrisSecundario.copy(alpha = 0.4f) else Colores.VerdeBosque, modifier = Modifier.size(24.dp)) }
         }
     }
 }
@@ -162,16 +189,17 @@ private fun TarjetaRecoleccionCompacta(recorrido: DiaRecorrido, onRecordar: () -
 @Composable
 private fun CajaFecha(recorrido: DiaRecorrido) {
     val hoy = FechaHora.obtenerFechaLocal(); val yaPaso = recorrido.fecha.isBefore(hoy)
-    val colorP = if (recorrido.esFeriado) Colores.RojoFeriado else if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeBosque
-    val colorF = if (recorrido.esFeriado) Colores.FondoFeriado else if (yaPaso) Colores.GrisSeleccion else Colores.VerdePastel
+    val colorP = if (recorrido.esFeriado) Color.White else if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeBosque
+    val colorF = if (recorrido.esFeriado) Colores.RojoFeriado else if (yaPaso) Colores.GrisSeleccion else Colores.VerdePastel
     val semana = obtenerDiaCorto(recorrido.fecha.dayOfWeek)
     val num = recorrido.fecha.dayOfMonth.toString()
     val mes = recorrido.fecha.format(formatoMes).uppercase()
-    Box(modifier = Modifier.width(60.dp).height(85.dp).clip(RoundedCornerShape(16.dp)).background(colorF), contentAlignment = Alignment.Center) {
+    
+    Box(modifier = Modifier.width(64.dp).height(80.dp).clip(RoundedCornerShape(14.dp)).background(colorF), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(text = semana, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = colorP.copy(alpha = 0.7f))
-            Text(text = num, fontSize = 26.sp, lineHeight = 30.sp, fontWeight = FontWeight.ExtraBold, color = colorP)
-            Text(text = mes, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = colorP.copy(alpha = 0.7f))
+            Text(text = semana, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if(recorrido.esFeriado) Color.White.copy(0.8f) else colorP.copy(alpha = 0.6f))
+            Text(text = num, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = colorP)
+            Text(text = mes, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if(recorrido.esFeriado) Color.White.copy(0.8f) else colorP.copy(alpha = 0.6f))
         }
     }
 }
@@ -179,57 +207,32 @@ private fun CajaFecha(recorrido: DiaRecorrido) {
 @Composable
 private fun EstadoRecorrido(recorrido: DiaRecorrido) {
     val hoy = FechaHora.obtenerFechaLocal(); val esHoy = recorrido.fecha == hoy; val yaPaso = recorrido.fecha.isBefore(hoy)
-    val texto = if (recorrido.esFeriado) "Feriado" else if (esHoy) "Hoy: Recolección" else if (yaPaso) "Ya pasó" else "Programado"
-    val colorT = if (recorrido.esFeriado) Colores.RojoFeriado else if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeBosque
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(modifier = Modifier.size(7.dp).clip(CircleShape).background(if(yaPaso) Colores.TextoGrisSecundario else Colores.VerdeSecundario))
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(text = texto, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = colorT)
+    
+    val texto = if (recorrido.esFeriado) "Feriado" else if (yaPaso) "Completado" else if (esHoy) "Hoy activo" else "Programado"
+    val icon = if (recorrido.esFeriado) Icons.Default.EventBusy else if (yaPaso) Icons.Default.History else if (esHoy) Icons.Default.RunningWithErrors else Icons.Default.Schedule
+    val colorT = if (recorrido.esFeriado) Colores.RojoFeriado else if (yaPaso) Colores.TextoGrisSecundario else Colores.VerdeSecundario
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.background(colorT.copy(0.1f), RoundedCornerShape(50)).padding(horizontal = 8.dp, vertical = 2.dp)) {
+        Icon(icon, null, tint = colorT, modifier = Modifier.size(14.dp))
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(text = texto, fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = colorT)
     }
 }
 
 @Composable
 private fun TarjetaInformacion(onVerAvisos: () -> Unit) {
     Surface(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = Colores.FondoTarjetaInfo, border = BorderStroke(1.dp, Colores.BordeTarjetaInfo)) {
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val estrecho = maxWidth < 320.dp
-            if (estrecho) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(verticalAlignment = Alignment.Top) {
-                        Icon(imageVector = Icons.Default.Info, contentDescription = "Info", tint = Colores.AzulIcono, modifier = Modifier.size(30.dp))
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = "Mantente informado.", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.AzulOscuroTitulo)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(text = "Los horarios pueden cambiar por clima o mantenimiento.", fontSize = 14.sp, lineHeight = 18.sp, color = Colores.AzulMedioTexto)
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                        Row(modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onVerAvisos).padding(horizontal = 4.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "Ver avisos", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Colores.AzulIcono)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(imageVector = Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Ver", tint = Colores.AzulIcono, modifier = Modifier.size(18.dp))
-                        }
-                    }
-                }
-            } else {
-                Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(imageVector = Icons.Default.Info, contentDescription = "Info", tint = Colores.AzulIcono, modifier = Modifier.size(44.dp))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Mantente informado.", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.AzulOscuroTitulo)
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(text = "Los horarios pueden cambiar por clima o mantenimiento.", fontSize = 14.sp, lineHeight = 18.sp, color = Colores.AzulMedioTexto)
-                    }
-                }
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(imageVector = Icons.Default.Info, contentDescription = "Info", tint = Colores.AzulIcono, modifier = Modifier.size(40.dp))
+            Spacer(modifier = Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = "Información importante", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Colores.AzulOscuroTitulo)
+                Text(text = "Los feriados nacionales podrían afectar el horario habitual.", fontSize = 13.sp, color = Colores.AzulMedioTexto)
             }
         }
     }
 }
 
-@Preview(name = "Celular normal", showBackground = true, widthDp = 390, heightDp = 844)
+@Preview(name = "Premium Design", showBackground = true, widthDp = 390, heightDp = 844)
 @Composable
-private fun PreviewCalendarioResponsive() {
-    Calendario(barrio = "Santa Rosa", diasRuta = setOf(DayOfWeek.TUESDAY, DayOfWeek.THURSDAY, DayOfWeek.SATURDAY), horaRutaStr = "06:00", horaFinRutaStr = "12:00")
-}
+private fun PreviewCalendarioResponsive() { Calendario() }
