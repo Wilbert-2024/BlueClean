@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.*
 import com.example.afinal.componentes.IndicadorRuta
 import com.example.afinal.componentes.VisualizadorRuta
 import com.example.afinal.datos.Colores
-import com.example.afinal.datos.guardarDatosTelefono.datosEnMemoria
 import com.example.afinal.ui.theme.FinalTheme
-import kotlinx.coroutines.delay
+import com.example.afinal.DB.vistaModal.Inicio_vistaModal
+import com.example.afinal.DB.repositorio.ExportadorDatos
 
 val VerdeOscuroGrad = Color(0xFF00381F)
 val VerdeLive = Color(0xFF4ADE80)
@@ -43,26 +43,29 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
     val config = LocalConfiguration.current
     val altoCabecera = (config.screenHeightDp * 0.25).dp
     
+    val vm = remember { Inicio_vistaModal() }
     var estaCargando by remember { mutableStateOf(true) }
-    var datosUsuario by remember { mutableStateOf<datosEnMemoria.DatosUsuario?>(null) }
     var mostrarRuta by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(600)
-        datosUsuario = datosEnMemoria.obtener(context)
+        vm.cargarDatos(context)
         estaCargando = false
     }
 
-    VisualizadorRuta(mostrar = mostrarRuta, onDismiss = { mostrarRuta = false })
+    // --- FLUJO TIEMPO REAL: Los datos de vm.estadoServicio ahora se actualizan solos gracias al VistaModal ---
+
+    // Usamos la lista real de puntos que viene de la memoria
+    VisualizadorRuta(
+        mostrar = mostrarRuta, 
+        onDismiss = { mostrarRuta = false },
+        puntosCargados = vm.puntosRutaParaVisualizador 
+    )
 
     if (estaCargando) {
         Box(modifier = Modifier.fillMaxSize().background(Colores.GrisFondo), contentAlignment = Alignment.Center) {
             CircularProgressIndicator(color = Colores.VerdePrincipal, strokeWidth = 3.dp)
         }
     } else {
-        val nombreMostrar = datosUsuario?.NomUsuario?.trim() ?: "Vecino/a"
-        val barrioMostrar = datosUsuario?.Barrio ?: "Sin barrio"
-
         Box(modifier = Modifier.fillMaxSize().background(Colores.GrisFondo).verticalScroll(rememberScrollState())) {
             Box(
                 modifier = Modifier.fillMaxWidth().height(altoCabecera).clip(RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp))
@@ -72,8 +75,8 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
             Column(modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 24.dp).padding(bottom = 24.dp)) {
                 Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
-                        Text("¡Hola, $nombreMostrar!", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, letterSpacing = (-0.5).sp)
-                        Text("Bienvenido de nuevo", fontSize = 13.sp, color = Color.White.copy(0.7f))
+                        Text("¡Hola, ${vm.nombreUsuario}!", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, letterSpacing = (-0.5).sp)
+                        Text("Bienvenido de nuevo a ${vm.barrioUsuario}", fontSize = 13.sp, color = Color.White.copy(0.7f))
                     }
                     Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(0.15f)).border(1.dp, Color.White.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
                         Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.size(20.dp))
@@ -89,13 +92,18 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("CAMIÓN ASIGNADO", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = GrisSutil, letterSpacing = 1.sp)
                         Image(painter = painterResource(id = R.drawable.camion), null, Modifier.size(100.dp, 60.dp).padding(vertical = 4.dp), contentScale = ContentScale.Fit)
-                        Text("Unidad #01", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
+                        Text(vm.nombreUnidad, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
                         
-                        val estaEnServicio = true 
-                        IndicadorRuta(origen = "San Pedro", destino = "Loma Fresca", progreso = 0.4f, estaActivo = estaEnServicio)
+                        // Indicador de ruta con datos reales de origen y destino
+                        IndicadorRuta(
+                            origen = vm.origenDestino.first, 
+                            destino = vm.origenDestino.second, 
+                            progreso = 0.5f, 
+                            estaActivo = vm.estadoServicio
+                        )
                         
                         Spacer(Modifier.height(8.dp))
-                        EstadoServicio(estaActivo = true)
+                        EstadoServicio(estaActivo = vm.estadoServicio)
                     }
                 }
 
@@ -115,14 +123,8 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text("Próxima llegada", fontSize = 12.sp, color = GrisSutil)
-                                Text("En 23 min", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
+                                Text(vm.horarioRuta, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
                             }
-                        }
-                        Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(start = 56.dp)) {
-                            Icon(Icons.Default.Refresh, null, tint = GrisSutil, modifier = Modifier.size(12.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("Actualizado hace 1 min", fontSize = 10.sp, color = GrisSutil)
                         }
                     }
                 }
@@ -165,6 +167,18 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = GrisSutil.copy(0.5f), modifier = Modifier.size(20.dp))
                     }
+                }
+
+                Spacer(modifier = Modifier.height(32.dp))
+                
+                // BOTÓN DE DEBUG TEMPORAL
+                Button(
+                    onClick = { ExportadorDatos.exportarTodoALogcat() },
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("DEBUG: EXPORTAR BASE DE DATOS", color = Color.Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
