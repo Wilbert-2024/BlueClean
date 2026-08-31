@@ -3,6 +3,7 @@ package com.example.afinal.DB.vistaModal
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -29,8 +30,9 @@ class Inicio_vistaModal : ViewModel() {
     var puntosRutaParaVisualizador by mutableStateOf<List<PuntoRecorrido>>(emptyList())
     var origenDestino by mutableStateOf(Pair("Origen", "Destino"))
     
-    // --- LÓGICA DE TIEMPO REAL ---
+    // --- LÓGICA DE TIEMPO REAL Y PROGRESO ---
     var minutosRestantes by mutableIntStateOf(0)
+    var progresoRuta by mutableFloatStateOf(0.0f)
     var velocidadCamion by mutableDoubleStateOf(0.0)
     var ubicacionUsuario by mutableStateOf<LatLng?>(null)
     var ubicacionCamion by mutableStateOf<LatLng?>(null)
@@ -66,10 +68,10 @@ class Inicio_vistaModal : ViewModel() {
                 origenDestino = Pair(listaTemporal.first().nombre, listaTemporal.last().nombre)
             }
 
-            // 1. Cargar la ruta completa para el cálculo de tiempo
+            // 1. Cargar la ruta completa para el cálculo de tiempo y progreso
             PuntoTrasarRuta_Repositorio.obtenerCoordenadasPorRutas(rutaId, onSuccess = { puntos ->
                 rutaTrazada = puntos.map { LatLng(it.latitude, it.longitude) }
-                intentarCalcularTiempo()
+                actualizarProgresoYTiempo()
             }, onError = {})
 
             // 2. Iniciar vigilancia del estado, ubicación y velocidad del camión
@@ -85,7 +87,7 @@ class Inicio_vistaModal : ViewModel() {
         gestorGPS = SeguimientoGPS(context)
         gestorGPS?.iniciar { nuevaPos ->
             ubicacionUsuario = nuevaPos
-            intentarCalcularTiempo()
+            actualizarProgresoYTiempo()
         }
     }
 
@@ -94,24 +96,30 @@ class Inicio_vistaModal : ViewModel() {
         rutaListener?.remove()
         rutaListener = camion_repositprio.observarCamionPorRuta(rutaId) { estadoServicio = it }
 
-        // Vigilar Ubicación Y Velocidad del Camión
+        // Vigilar Ubicación Y Velocidad del Camión desde Firestore
         ubicacionCamionListener?.remove()
         ubicacionCamionListener = camion_repositprio.observarUbicacionYVelocidad(rutaId) { punto, velocidad ->
             if (punto != null) {
                 ubicacionCamion = LatLng(punto.latitude, punto.longitude)
                 velocidadCamion = velocidad
-                intentarCalcularTiempo()
+                actualizarProgresoYTiempo()
             }
         }
     }
 
-    private fun intentarCalcularTiempo() {
-        val uUser = ubicacionUsuario
+    private fun actualizarProgresoYTiempo() {
         val uCamion = ubicacionCamion
         val ruta = rutaTrazada
+        val uUser = ubicacionUsuario
 
-        if (uUser != null && uCamion != null && ruta.isNotEmpty()) {
-            minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
+        if (uCamion != null && ruta.isNotEmpty()) {
+            // 1. Actualizar el porcentaje de la barra de avance
+            progresoRuta = CalculadorTiempo.calcularPorcentajeProgreso(uCamion, ruta)
+            
+            // 2. Actualizar el tiempo estimado si también tenemos al usuario
+            if (uUser != null) {
+                minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
+            }
         }
     }
 

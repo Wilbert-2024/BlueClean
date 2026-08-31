@@ -103,7 +103,7 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                         IndicadorRuta(
                             origen = vm.origenDestino.first, 
                             destino = vm.origenDestino.second, 
-                            progreso = 0.5f, 
+                            progreso = vm.progresoRuta, 
                             estaActivo = vm.estadoServicio
                         )
                         

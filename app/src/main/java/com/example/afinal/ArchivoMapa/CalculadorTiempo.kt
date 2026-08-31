@@ -6,8 +6,8 @@ import com.google.android.gms.maps.model.LatLng
 import kotlin.math.roundToInt
 
 /**
- * Clase encargada de realizar cálculos matemáticos de distancia y tiempo
- * para estimar la llegada del camión a la posición del usuario.
+ * Clase encargada de realizar cálculos matemáticos de distancia, tiempo y porcentaje de progreso
+ * para estimar la llegada del camión y su avance en la ruta.
  */
 object CalculadorTiempo {
 
@@ -18,7 +18,7 @@ object CalculadorTiempo {
 
     /**
      * Calcula los minutos que le faltan al camión para llegar a la ubicación del usuario,
-     * utilizando la velocidad actual de Firebase o la última velocidad válida registrada.
+     * utilizando la velocidad actual de Firebase/Firestore o la última velocidad válida registrada.
      */
     fun estimarMinutosLlegada(
         posCamion: LatLng,
@@ -28,7 +28,7 @@ object CalculadorTiempo {
     ): Int {
         if (puntosRuta.isEmpty()) return -2
 
-        // 1. Si la velocidad actual de Firebase es mayor a 0.5 km/h, la guardamos como la "última válida"
+        // 1. Si la velocidad actual de Firestore es mayor a 0.5 km/h, la guardamos como la "última válida"
         if (velocidadActualKmH > 0.5) {
             ultimaVelocidadValida = velocidadActualKmH
             Log.d(TAG, "Nueva velocidad válida registrada: $ultimaVelocidadValida km/h")
@@ -66,7 +66,6 @@ object CalculadorTiempo {
         }
 
         // 6. Convertir km/h a Metros Por Minuto
-        // Ejemplo: 12 km/h = 12000 metros / 60 min = 200 metros/minuto
         val metrosPorMinuto = (ultimaVelocidadValida * 1000.0) / 60.0
         val minutos = (distanciaTotalMetros / metrosPorMinuto).roundToInt()
         val resultadoFinal = if (minutos < 1) 1 else minutos
@@ -74,6 +73,21 @@ object CalculadorTiempo {
         Log.d(TAG, "Distancia: ${distanciaTotalMetros.toInt()}m | Vel Usada: $ultimaVelocidadValida km/h | Tiempo: $resultadoFinal min")
         
         return resultadoFinal
+    }
+
+    /**
+     * Calcula el porcentaje de avance del camión en la ruta (valor de 0.0f a 1.0f).
+     */
+    fun calcularPorcentajeProgreso(posCamion: LatLng, puntosRuta: List<LatLng>): Float {
+        if (puntosRuta.isEmpty()) return 0.0f
+        
+        val indiceCamion = buscarIndiceMasCercano("PROGRESO", posCamion, puntosRuta)
+        val maxIndice = (puntosRuta.size - 1).coerceAtLeast(1)
+        
+        val porcentaje = (indiceCamion.toFloat() / maxIndice.toFloat()).coerceIn(0.0f, 1.0f)
+        Log.d(TAG, "Progreso de la ruta: ${(porcentaje * 100).toInt()}% (Índice $indiceCamion de $maxIndice)")
+        
+        return porcentaje
     }
 
     private fun buscarIndiceMasCercano(etiqueta: String, posicion: LatLng, ruta: List<LatLng>): Int {
