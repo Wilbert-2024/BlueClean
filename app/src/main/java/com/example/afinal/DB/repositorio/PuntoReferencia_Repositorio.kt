@@ -36,6 +36,16 @@ object PuntoReferencia_Repositorio {
             .addOnFailureListener { onSuccess(emptyList()) }
     }
 
+    // Nueva: Obtiene los objetos Lugar completos (Nombre + ruta_id) para un barrio
+    fun obtenerLugaresPorBarrio(barrio: String, onSuccess: (List<PuntoReferencia_Modal.Lugar>) -> Unit){
+        Conexion.db.collection(Coleccion).document(barrio).get()
+            .addOnSuccessListener { doc ->
+                val datos = doc.toObject(PuntoReferencia_Modal.Datos::class.java)
+                onSuccess(datos?.Lugares ?: emptyList())
+            }
+            .addOnFailureListener { onSuccess(emptyList()) }
+    }
+
 
     fun obtenerRutaPorBarrio(barrio: String, onSuccess: (List<String>) -> Unit, onError: ((Exception) -> Unit)? = null){
         Conexion.db.collection(Coleccion).document(barrio).get()
@@ -62,6 +72,21 @@ object PuntoReferencia_Repositorio {
                     it.ruta_id.equals(rutaId, ignoreCase = true)
                 } ?: emptyList()
                 onSuccess(lugaresCoordenadas)
+            }
+            .addOnFailureListener { onSuccess(emptyList()) }
+    }
+
+    // Nueva: Busca en TODOS los barrios aquellos lugares que pertenezcan a una ruta_id específica
+    fun obtenerTodosLosLugaresDeUnaRuta(rutaId: String, onSuccess: (List<PuntoReferencia_Modal.Lugar>) -> Unit){
+        Conexion.db.collection(Coleccion).get()
+            .addOnSuccessListener { result ->
+                val todosLosLugares = mutableListOf<PuntoReferencia_Modal.Lugar>()
+                for (doc in result.documents) {
+                    val datos = doc.toObject(PuntoReferencia_Modal.Datos::class.java)
+                    val filtrados = datos?.Lugares?.filter { it.ruta_id.equals(rutaId, ignoreCase = true) }
+                    if (filtrados != null) todosLosLugares.addAll(filtrados)
+                }
+                onSuccess(todosLosLugares)
             }
             .addOnFailureListener { onSuccess(emptyList()) }
     }

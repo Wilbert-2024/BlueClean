@@ -3,6 +3,8 @@ package com.example.afinal.DB.repositorio
 import com.example.afinal.DB.conexionBD.Conexion
 import com.example.afinal.DB.modal.camion_Modal
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.ListenerRegistration
+import android.util.Log
 
 
 object camion_repositprio {
@@ -42,6 +44,24 @@ object camion_repositprio {
 
     fun eliminar (id: String){
         Conexion.db.collection(Coleccion).document(id).delete()
+    }
+
+    // --- FLUJO TIEMPO REAL: Vigilar el camión que tenga asignada esta ruta ---
+    fun observarCamionPorRuta(rutaId: String, onUpdate: (Boolean) -> Unit): ListenerRegistration {
+        return Conexion.db.collection(Coleccion)
+            .whereEqualTo("ruta_id", rutaId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("camion_repositprio", "Error vigilando camión: ${error.message}")
+                    return@addSnapshotListener
+                }
+                
+                val camionDoc = snapshot?.documents?.firstOrNull()
+                if (camionDoc != null) {
+                    val estado = camionDoc.getBoolean("Estado") ?: false
+                    onUpdate(estado)
+                }
+            }
     }
 
 
