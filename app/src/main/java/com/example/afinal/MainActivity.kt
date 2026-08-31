@@ -8,6 +8,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.media.RingtoneManager
 import android.util.Log
+import com.google.firebase.FirebaseApp
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d("MainActivity", "Iniciando app, SDK Version: ${Build.VERSION.SDK_INT}")
+        
+        // Forzar inicialización de Firebase
+        try {
+            FirebaseApp.initializeApp(this)
+            Log.d("MainActivity", "Firebase inicializado correctamente")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error inicializando Firebase: ${e.message}")
+        }
+
         crearCanalNotificaciones()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             Log.d("MainActivity", "Solicitando permiso de notificaciones...")
