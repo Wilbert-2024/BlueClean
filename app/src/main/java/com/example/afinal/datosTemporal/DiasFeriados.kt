@@ -14,7 +14,5 @@ object DiasFeriados {
         FeriadoTemporal(8, 12, 0, "Día de la Inmaculada Concepción de María"),
         FeriadoTemporal(25, 12, 0, "Navidad"),
         // Feriados variables ejemplo (Semana Santa 2026 - Referencial)
-        FeriadoTemporal(2, 4, 2026, "Jueves Santo"),
-        FeriadoTemporal(3, 4, 2026, "Viernes Santo")
-    )
+         )
 }
