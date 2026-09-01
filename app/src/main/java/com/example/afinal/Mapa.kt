@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.location.Location
 import android.location.LocationManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,9 +40,7 @@ import com.example.afinal.ArchivoMapa.recordarVistaMapaConCicloVida
 import com.example.afinal.DB.vistaModal.Mapa_vistaModal
 import com.example.afinal.ui.theme.FinalTheme
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.Circle
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.LatLngBounds
+import com.google.android.gms.maps.model.*
 
 @Composable
 fun Mapa(onAtras: () -> Unit) {
@@ -56,6 +53,12 @@ fun Mapa(onAtras: () -> Unit) {
     var circuloPulso by remember { mutableStateOf<Circle?>(null) }
     var puntoCentro by remember { mutableStateOf<Circle?>(null) }
     var expandido by remember { mutableStateOf(false) }
+
+    // --- ELEMENTOS PERSISTENTES EN EL MAPA ---
+    var marcadorCamion by remember { mutableStateOf<Marker?>(null) }
+    var polilineaPasada by remember { mutableStateOf<Polyline?>(null) }
+    var polilineaFutura by remember { mutableStateOf<Polyline?>(null) }
+    var posCamionAnterior by remember { mutableStateOf<LatLng?>(null) }
     
     // --- ESTADOS DE CONTROL DE GPS ---
     var permisoConcedido by remember { mutableStateOf(GestorPermisosMapa.tienePermisoUbicacion(contexto)) }
@@ -135,41 +138,72 @@ fun Mapa(onAtras: () -> Unit) {
         if (!permisoConcedido || !gpsActivo) {
             vm.detenerGpsUsuario()
         } else {
-            camaraInicializada = false // Forzamos el re-encuadre completo como al entrar desde la barra
+            camaraInicializada = false
             vm.iniciarGpsUsuario(contexto)
         }
     }
 
-    // DIBUJO ESTABLE (Línea de avance y Camión)
+    // DIBUJO ESTABLE Y ANIMACIÓN FLUÍDA DEL CAMIÓN SOBRE LA RUTA
     LaunchedEffect(vm.rutaTrazada, vm.ubicacionCamion, gpsActivo, permisoConcedido) {
         vistaMapa.getMapAsync { googleMap ->
-            googleMap.clear()
-            circuloPulso = null
-            puntoCentro = null
-            
             val puntosTotales = vm.rutaTrazada
             val posCamion = vm.ubicacionCamion
-
-            if (puntosTotales.isNotEmpty()) {
-                if (posCamion != null) {
-                    val indiceCercano = CalculadorTiempo.buscarIndiceMasCercano("CAMIÓN", posCamion, puntosTotales)
-                    
-                    val partePasada = puntosTotales.subList(0, indiceCercano + 1)
-                    DibujanteElementosMapa.trazarLineaRuta(googleMap, partePasada, "#4CAF50")
-                    
-                    val parteFutura = puntosTotales.subList(indiceCercano, puntosTotales.size)
-                    DibujanteElementosMapa.trazarLineaRuta(googleMap, parteFutura, "#00BCD4")
-                } else {
-                    DibujanteElementosMapa.trazarLineaRuta(googleMap, puntosTotales, "#00BCD4")
-                }
-            }
 
             if (permisoConcedido && gpsActivo) {
                 DibujanteElementosMapa.mostrarMiUbicacionReal(googleMap)
             }
-            
-            posCamion?.let { pos ->
-                if (pos.latitude != 0.0) DibujanteElementosMapa.dibujarMarcadorCamion(googleMap, contexto, pos)
+
+            if (puntosTotales.isNotEmpty()) {
+                if (posCamion != null && posCamion.latitude != 0.0) {
+                    val indiceCercano = CalculadorTiempo.buscarIndiceMasCercano("CAMIÓN", posCamion, puntosTotales)
+                    val partePasada = puntosTotales.subList(0, indiceCercano + 1)
+                    val parteFutura = puntosTotales.subList(indiceCercano, puntosTotales.size)
+
+                    if (polilineaPasada == null) {
+                        polilineaPasada = DibujanteElementosMapa.trazarLineaRuta(googleMap, partePasada, "#4CAF50")
+                    } else {
+                        polilineaPasada!!.points = partePasada
+                    }
+
+                    if (polilineaFutura == null) {
+                        polilineaFutura = DibujanteElementosMapa.trazarLineaRuta(googleMap, parteFutura, "#00BCD4")
+                    } else {
+                        polilineaFutura!!.points = parteFutura
+                    }
+
+                    if (marcadorCamion == null) {
+                        marcadorCamion = DibujanteElementosMapa.obtenerOCrearMarcadorCamion(googleMap, contexto, posCamion, null)
+                        posCamionAnterior = posCamion
+                    } else if (posCamionAnterior != posCamion) {
+                        val posAnt = posCamionAnterior ?: posCamion
+                        val idxAnt = CalculadorTiempo.buscarIndiceMasCercano("ANT", posAnt, puntosTotales)
+                        val idxNuevo = indiceCercano
+
+                        val subRuta = if (idxAnt <= idxNuevo) {
+                            puntosTotales.subList(idxAnt, (idxNuevo + 1).coerceAtMost(puntosTotales.size))
+                        } else {
+                            puntosTotales.subList(idxNuevo, (idxAnt + 1).coerceAtMost(puntosTotales.size)).reversed()
+                        }
+
+                        DibujanteElementosMapa.animarCamionSobreRuta(
+                            marcador = marcadorCamion!!,
+                            puntosSubRuta = subRuta,
+                            duracionMs = 4500L,
+                            alAvanzar = { posActual ->
+                                val idxAct = CalculadorTiempo.buscarIndiceMasCercano("ACT", posActual, puntosTotales)
+                                polilineaPasada?.points = puntosTotales.subList(0, (idxAct + 1).coerceAtMost(puntosTotales.size))
+                                polilineaFutura?.points = puntosTotales.subList(idxAct, puntosTotales.size)
+                            }
+                        )
+                        posCamionAnterior = posCamion
+                    }
+                } else {
+                    if (polilineaFutura == null) {
+                        polilineaFutura = DibujanteElementosMapa.trazarLineaRuta(googleMap, puntosTotales, "#00BCD4")
+                    } else {
+                        polilineaFutura!!.points = puntosTotales
+                    }
+                }
             }
 
             if (!camaraInicializada) {
