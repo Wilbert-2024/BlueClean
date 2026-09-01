@@ -1,5 +1,8 @@
 package com.example.afinal.componentes
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -27,6 +30,27 @@ fun IndicadorRuta(origen: String, destino: String, progreso: Float, estaActivo: 
     val colorRestante = Color.LightGray
     val opacidadIcono = if (estaActivo) 1f else 0.5f
 
+    val valorObjetivo = if (estaActivo) progreso.coerceIn(0f, 1f) else 0f
+    
+    val progresoAnimatable = remember { Animatable(valorObjetivo) }
+    var primeraCargaCompletada by remember { mutableStateOf(false) }
+
+    LaunchedEffect(valorObjetivo) {
+        if (!primeraCargaCompletada) {
+            progresoAnimatable.snapTo(valorObjetivo)
+            if (valorObjetivo > 0f) {
+                primeraCargaCompletada = true
+            }
+        } else if (progresoAnimatable.value != valorObjetivo) {
+            progresoAnimatable.animateTo(
+                targetValue = valorObjetivo,
+                animationSpec = tween(durationMillis = 3000, easing = LinearEasing)
+            )
+        }
+    }
+
+    val progresoAnimado = progresoAnimatable.value
+
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(origen, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = if (estaActivo) Color(0xFF1C1C1E) else Color.Gray)
@@ -38,7 +62,7 @@ fun IndicadorRuta(origen: String, destino: String, progreso: Float, estaActivo: 
         Box(modifier = Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.CenterStart) {
             Canvas(modifier = Modifier.fillMaxWidth().height(2.dp)) {
                 val width = size.width
-                val progressX = width * progreso
+                val progressX = width * progresoAnimado
 
                 if (estaActivo) {
                     drawLine(color = colorRecorrido, start = androidx.compose.ui.geometry.Offset(0f, 0f), end = androidx.compose.ui.geometry.Offset(progressX, 0f), strokeWidth = 6f)
@@ -51,7 +75,7 @@ fun IndicadorRuta(origen: String, destino: String, progreso: Float, estaActivo: 
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(12.dp).background(colorRecorrido, CircleShape).border(2.dp, Color.White, CircleShape))
                 Box(Modifier.weight(1f)) {
-                    Box(modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth(if(estaActivo) progreso else 0f).alpha(opacidadIcono)) {
+                    Box(modifier = Modifier.align(Alignment.CenterStart).fillMaxWidth(if (estaActivo) progresoAnimado.coerceIn(0.001f, 1f) else 0.001f).alpha(opacidadIcono)) {
                         Box(modifier = Modifier.align(Alignment.CenterEnd).offset(x = (6).dp)) {
                             Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White).border(1.dp, colorRecorrido, CircleShape), contentAlignment = Alignment.Center) {
                                 Icon(Icons.Default.LocalShipping, null, tint = colorRecorrido, modifier = Modifier.size(18.dp))
