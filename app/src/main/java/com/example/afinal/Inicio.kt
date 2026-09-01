@@ -1,5 +1,9 @@
 package com.example.afinal
 
+import android.Manifest
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -31,6 +35,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.afinal.R
+import com.example.afinal.ArchivoMapa.GestorPermisosMapa
 import com.example.afinal.DB.repositorio.ExportadorDatos
 import com.example.afinal.DB.vistaModal.Inicio_vistaModal
 import com.example.afinal.componentes.IndicadorRuta
@@ -56,7 +62,6 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
 
     LaunchedEffect(Unit) {
         vm.cargarDatos(context)
-        vm.iniciarGpsUsuario(context)
         estaCargando = false
     }
 
