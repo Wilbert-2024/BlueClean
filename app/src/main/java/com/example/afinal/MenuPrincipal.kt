@@ -92,11 +92,21 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
             composable("inicio") { 
                 Inicio(onNavegarADenuncia = { controladorNav.navigate("denuncia") }) 
             }
-            composable("mapa") { Mapa(onAtras = { controladorNav.popBackStack() }) }
-            composable("avisos") { PantallaNotificaciones() }
-            composable("calendario") {
-                Calendario()
+            composable("mapa") { 
+                Mapa(
+                    onAtras = { 
+                        controladorNav.navigate("inicio") {
+                            popUpTo(controladorNav.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                ) 
             }
+            composable("avisos") { PantallaNotificaciones() }
+            composable("calendario") {Calendario()     }
             composable("perfil") { Prueba(onRegresarAlInicio) }
             composable("denuncia") { 
                 Denuncia(onRegresar = { controladorNav.popBackStack() }) 
