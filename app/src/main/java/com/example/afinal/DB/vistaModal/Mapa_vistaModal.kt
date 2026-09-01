@@ -3,9 +3,12 @@ package com.example.afinal.DB.vistaModal
 import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.example.afinal.ArchivoMapa.CalculadorTiempo
 import com.example.afinal.ArchivoMapa.SeguimientoGPS
 import com.example.afinal.DB.repositorio.camion_repositprio
 import com.example.afinal.DB.repositorio.PuntoTrasarRuta_Repositorio
@@ -21,6 +24,8 @@ class Mapa_vistaModal : ViewModel() {
     var rutaTrazada by mutableStateOf<List<LatLng>>(emptyList())
     var proximasParadas by mutableStateOf<List<String>>(emptyList())
     var estaCargando by mutableStateOf(true)
+    var minutosRestantes by mutableIntStateOf(0)
+    var velocidadCamion by mutableDoubleStateOf(0.0)
 
     private var ubicacionListener: ListenerRegistration? = null
     private var gestorGPS: SeguimientoGPS? = null
@@ -32,6 +37,7 @@ class Mapa_vistaModal : ViewModel() {
 
         PuntoTrasarRuta_Repositorio.obtenerCoordenadasPorRutas(rutaId, onSuccess = { puntos ->
             rutaTrazada = puntos.map { LatLng(it.latitude, it.longitude) }
+            intentarCalcularTiempo()
             verificarCargaCompleta()
         }, onError = { err ->
             Log.e("Mapa_vistaModal", "Error cargando ruta: ${err.message}")
@@ -43,26 +49,46 @@ class Mapa_vistaModal : ViewModel() {
             for (i in 0 until puntosArray.length()) {
                 paradas.add(puntosArray.getJSONObject(i).getString("Nombre"))
             }
-            proximasParadas = paradas.take(2)
+            proximasParadas = paradas
         } catch (e: Exception) { e.printStackTrace() }
 
         iniciarSeguimientoCamion(rutaId)
     }
 
     fun iniciarGpsUsuario(context: Context) {
+        gestorGPS?.detener()
         gestorGPS = SeguimientoGPS(context)
         gestorGPS?.iniciar { nuevaUbicacion ->
             ubicacionUsuario = nuevaUbicacion
+            intentarCalcularTiempo()
         }
+    }
+
+    fun detenerGpsUsuario() {
+        gestorGPS?.detener()
+        gestorGPS = null
+        ubicacionUsuario = null
     }
 
     private fun iniciarSeguimientoCamion(rutaId: String) {
         ubicacionListener?.remove()
-        ubicacionListener = camion_repositprio.observarUbicacionReal(rutaId) { punto ->
+        ubicacionListener = camion_repositprio.observarUbicacionYVelocidad(rutaId) { punto, velocidad ->
             if (punto != null) {
                 ubicacionCamion = LatLng(punto.latitude, punto.longitude)
+                velocidadCamion = velocidad
+                intentarCalcularTiempo()
             }
             verificarCargaCompleta()
+        }
+    }
+
+    private fun intentarCalcularTiempo() {
+        val uUser = ubicacionUsuario
+        val uCamion = ubicacionCamion
+        val ruta = rutaTrazada
+
+        if (uUser != null && uCamion != null && ruta.isNotEmpty()) {
+            minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
         }
     }
 
