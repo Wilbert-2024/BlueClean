@@ -220,17 +220,12 @@ fun Mapa(onAtras: () -> Unit) {
         AndroidView(factory = { vistaMapa }, modifier = Modifier.fillMaxSize())
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Surface(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .shadow(4.dp),
+                modifier = Modifier .clip(RoundedCornerShape(50)).shadow(4.dp),
                 color = Color.White
             ) {
                 Row(
@@ -245,11 +240,7 @@ fun Mapa(onAtras: () -> Unit) {
             }
 
             Surface(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .shadow(4.dp)
-                    .clickable { },
+                modifier = Modifier.size(44.dp).clip(CircleShape).shadow(4.dp) .clickable { },
                 color = Color.White
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -297,12 +288,7 @@ fun Mapa(onAtras: () -> Unit) {
                                 Text( text = "PRÓXIMA PARADA", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 0.5.sp )
                                 
                                 val proximaParadaTexto = vm.proximasParadas.firstOrNull() ?: vm.barrioUsuario
-                                Text(
-                                    text = proximaParadaTexto,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = Color(0xFF1A237E)
-                                )
+                                Text( text = proximaParadaTexto, fontSize = 14.sp,fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A237E) )
                             }
 
                             IconButton(
@@ -320,13 +306,7 @@ fun Mapa(onAtras: () -> Unit) {
                         if (expandido && vm.proximasParadas.isNotEmpty()) {
                             HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                                Text(
-                                    text = "Recorrido de paradas:",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Gray,
-                                    modifier = Modifier.padding(bottom = 6.dp)
-                                )
+                                Text(text = "Recorrido de paradas:",fontSize = 11.sp, fontWeight = FontWeight.Bold,color = Color.Gray, modifier = Modifier.padding(bottom = 6.dp) )
                                 
                                 vm.proximasParadas.forEachIndexed { index, parada ->
                                     Row(
@@ -340,9 +320,7 @@ fun Mapa(onAtras: () -> Unit) {
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Spacer(Modifier.width(8.dp))
-                                        Text(
-                                            text = parada,
-                                            fontSize = 13.sp,
+                                        Text(text = parada,fontSize = 13.sp,
                                             fontWeight = if (index == 0) FontWeight.Bold else FontWeight.Normal,
                                             color = if (index == 0) Color.Black else Color.Gray
                                         )
@@ -378,18 +356,10 @@ fun Mapa(onAtras: () -> Unit) {
                                 GestorPermisosMapa.abrirAjustesGps(contexto)
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF004527),
-                            contentColor = Color.White
-                        ),
+                        colors = ButtonDefaults.buttonColors( containerColor = Color(0xFF004527), contentColor = Color.White ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(
-                            text = "Activar",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
+                        Text( text = "Activar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp )
                     }
                 },
                 dismissButton = {
@@ -399,12 +369,7 @@ fun Mapa(onAtras: () -> Unit) {
                             onAtras()
                         }
                     ) {
-                        Text(
-                            text = "Cancelar",
-                            color = Color(0xFF666666),
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp
-                        )
+                        Text(  text = "Cancelar", color = Color(0xFF666666), fontWeight = FontWeight.Bold,  fontSize = 14.sp )
                     }
                 },
                 containerColor = Color.White,
