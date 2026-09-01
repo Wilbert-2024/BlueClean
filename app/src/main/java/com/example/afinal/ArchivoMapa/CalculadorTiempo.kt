@@ -90,7 +90,11 @@ object CalculadorTiempo {
         return porcentaje
     }
 
-    private fun buscarIndiceMasCercano(etiqueta: String, posicion: LatLng, ruta: List<LatLng>): Int {
+    /**
+     * Busca el índice del punto de la ruta más cercano a una posición dada.
+     */
+    fun buscarIndiceMasCercano(etiqueta: String = "BUSQUEDA", posicion: LatLng, ruta: List<LatLng>): Int {
+        if (ruta.isEmpty()) return 0
         var indiceMinimo = 0
         var distanciaMinima = Float.MAX_VALUE
         val resultado = FloatArray(1)
