@@ -98,11 +98,11 @@ object DibujanteElementosMapa {
         return mapa.addCircle(
             CircleOptions()
                 .center(posicion)
-                .radius(8.0)
+                .radius(12.0)
                 .fillColor(Color.parseColor(colorHex))
                 .strokeColor(Color.WHITE)
-                .strokeWidth(5f)
-                .zIndex(1.0f)
+                .strokeWidth(6f)
+                .zIndex(5.0f)
         )
     }
 }
