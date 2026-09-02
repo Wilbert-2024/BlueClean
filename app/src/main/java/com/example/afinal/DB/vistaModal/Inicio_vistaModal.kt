@@ -84,11 +84,18 @@ class Inicio_vistaModal : ViewModel() {
     }
 
     fun iniciarGpsUsuario(context: Context) {
+        gestorGPS?.detener()
         gestorGPS = SeguimientoGPS(context)
         gestorGPS?.iniciar { nuevaPos ->
             ubicacionUsuario = nuevaPos
             actualizarProgresoYTiempo()
         }
+    }
+
+    fun detenerGpsUsuario() {
+        gestorGPS?.detener()
+        gestorGPS = null
+        ubicacionUsuario = null
     }
 
     private fun iniciarSeguimientoReal(rutaId: String) {
@@ -116,7 +123,7 @@ class Inicio_vistaModal : ViewModel() {
             // 1. Actualizar el porcentaje de la barra de avance
             progresoRuta = CalculadorTiempo.calcularPorcentajeProgreso(uCamion, ruta)
             
-            // 2. Actualizar el tiempo estimado si también tenemos al usuario
+            // 2. Actualizar el tiempo estimado si tenemos la ubicación GPS del usuario
             if (uUser != null) {
                 minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
             }
