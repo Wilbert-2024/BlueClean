@@ -55,7 +55,8 @@ private fun obtenerDiaCorto(diaSemana: DayOfWeek): String {
 fun Calendario(
     onNotificaciones: () -> Unit = {},
     onRecordar: (DiaRecorrido) -> Unit = {},
-    onVerAvisos: () -> Unit = {}
+    onVerAvisos: () -> Unit = {},
+    cantidadNoLeidos: Int = 0
 ) {
     val context = LocalContext.current
     val vm = remember { Calendario_vistaModal() }
@@ -75,7 +76,7 @@ fun Calendario(
 
         Box(modifier = Modifier.fillMaxSize().background(Colores.VerdeBosque)) {
             Column(modifier = Modifier.fillMaxSize()) {
-                EncabezadoCalendario(horaInicio = horaRuta, horaFin = horaFinRuta, onNotificaciones = onNotificaciones)
+                EncabezadoCalendario(horaInicio = horaRuta, horaFin = horaFinRuta, onNotificaciones = onNotificaciones, cantidadNoLeidos = cantidadNoLeidos)
                 
                 Box(modifier = Modifier.fillMaxWidth().weight(1f).padding(top = 6.dp)) {
                     Column(modifier = Modifier.fillMaxSize().background(color = Color.White, shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))) {
@@ -147,12 +148,23 @@ fun Calendario(
 }
 
 @Composable
-private fun EncabezadoCalendario(horaInicio: LocalTime, horaFin: LocalTime, onNotificaciones: () -> Unit) {
+private fun EncabezadoCalendario(horaInicio: LocalTime, horaFin: LocalTime, onNotificaciones: () -> Unit, cantidadNoLeidos: Int = 0) {
     val fmt = DateTimeFormatter.ofPattern("H:mm")
     Column(modifier = Modifier.fillMaxWidth().statusBarsPadding()) {
         Box(modifier = Modifier.fillMaxWidth().height(44.dp).padding(horizontal = 8.dp).offset(y = (-8).dp)) {
             Text(text = "Calendario", fontSize = 21.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, modifier = Modifier.align(Alignment.Center))
-            IconButton(onClick = onNotificaciones, modifier = Modifier.align(Alignment.CenterEnd)) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White, modifier = Modifier.size(24.dp)) }
+            BadgedBox(
+                modifier = Modifier.align(Alignment.CenterEnd),
+                badge = {
+                    if (cantidadNoLeidos > 0) {
+                        Badge(containerColor = Color(0xFFD32F2F), contentColor = Color.White) {
+                            Text(text = if (cantidadNoLeidos > 99) "99+" else cantidadNoLeidos.toString())
+                        }
+                    }
+                }
+            ) {
+                IconButton(onClick = onNotificaciones) { Icon(imageVector = Icons.Default.Notifications, contentDescription = "Notificaciones", tint = Color.White, modifier = Modifier.size(24.dp)) }
+            }
         }
         
         Spacer(modifier = Modifier.height(2.dp))
@@ -228,7 +240,7 @@ private fun CalendarioVistaMensual(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         border = BorderStroke(1.dp, Color(0xFFEEEEEE))
     ) {
-        Column(modifier = Modifier.padding(10.dp)) {
+        Column(modifier = Modifier.padding(vertical = 12.dp, horizontal = 12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onMesAnterior, modifier = Modifier.size(32.dp).background(Colores.VerdeFondoSuave, CircleShape)) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Anterior", tint = Colores.VerdeBosque, modifier = Modifier.size(16.dp))
@@ -244,9 +256,9 @@ private fun CalendarioVistaMensual(
                     Text(text = dia, modifier = Modifier.weight(1f), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Colores.TextoGrisSecundario, textAlign = TextAlign.Center)
                 }
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             diasGrid.chunked(7).forEach { semana ->
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.5.dp)) {
                     semana.forEach { fecha ->
                         val esDelMes = fecha.month == mesActual.month
                         val esHoy = fecha == hoy
@@ -260,7 +272,7 @@ private fun CalendarioVistaMensual(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             LeyendaEstados()
         }
     }
@@ -285,10 +297,10 @@ private fun CeldaDiaGrid(fecha: LocalDate, esDelMes: Boolean, esHoy: Boolean, es
     }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable { onClick() }) {
-        Box(modifier = Modifier.size(28.dp).clip(CircleShape).background(colorFondo).then(if (esSeleccionado && !esHoy) Modifier.clip(CircleShape) else Modifier), contentAlignment = Alignment.Center) {
-            Text(text = fecha.dayOfMonth.toString(), fontSize = 12.sp, fontWeight = if (esHoy || esSeleccionado || esDiaRuta || esFeriado) FontWeight.Bold else FontWeight.Normal, color = colorTexto)
+        Box(modifier = Modifier.size(30.dp).clip(CircleShape).background(colorFondo).then(if (esSeleccionado && !esHoy) Modifier.clip(CircleShape) else Modifier), contentAlignment = Alignment.Center) {
+            Text(text = fecha.dayOfMonth.toString(), fontSize = 12.5.sp, fontWeight = if (esHoy || esSeleccionado || esDiaRuta || esFeriado) FontWeight.Bold else FontWeight.Normal, color = colorTexto)
         }
-        Spacer(modifier = Modifier.height(1.dp))
+        Spacer(modifier = Modifier.height(2.dp))
         if (esDelMes && (esDiaRuta || esFeriado)) {
             Box(modifier = Modifier.size(4.dp).clip(CircleShape).background(if (esFeriado) Colores.RojoFeriado else Colores.VerdeSecundario))
         } else {

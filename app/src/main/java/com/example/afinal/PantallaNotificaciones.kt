@@ -35,9 +35,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun PantallaNotificaciones() {
+fun PantallaNotificaciones(vm: Notificacion_vistaModal = remember { Notificacion_vistaModal() }) {
     val context = LocalContext.current
-    val vm = remember { Notificacion_vistaModal() }
     var mensajeSeleccionado by remember { mutableStateOf<Notificacion_Modal.Datos?>(null) }
     var filtroSeleccionado by remember { mutableStateOf("TODAS") }
 

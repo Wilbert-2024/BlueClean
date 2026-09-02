@@ -14,6 +14,8 @@ class Notificacion_vistaModal : ViewModel() {
     var estaCargando by mutableStateOf(true)
     var idsVistos by mutableStateOf<Set<String>>(emptySet())
 
+    val cantidadNoLeidos: Int get() = listaNotificaciones.count { it.id.isNotEmpty() && !idsVistos.contains(it.id) }
+
     fun cargarNotificaciones(context: Context) {
         val datos = datosEnMemoria.obtener(context)
         val rutaId = datos?.RutaId ?: ""

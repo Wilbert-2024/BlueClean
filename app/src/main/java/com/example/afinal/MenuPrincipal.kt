@@ -2,6 +2,7 @@
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -25,16 +26,22 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.afinal.ArchivoMapa.GestorPermisosMapa
+import com.example.afinal.DB.vistaModal.Notificacion_vistaModal
 import com.example.afinal.datos.Colores
 import kotlinx.coroutines.delay
 
 data class ItemMenu(val ruta: String, val icono: ImageVector, val titulo: String)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
     val contexto = LocalContext.current
     val controladorNav = rememberNavController()
     var mostrarAvisoSinInternet by remember { mutableStateOf(false) }
+
+    val notifVm = remember { Notificacion_vistaModal() }
+    LaunchedEffect(Unit) { notifVm.cargarNotificaciones(contexto) }
+    val cantidadNoLeidos = notifVm.cantidadNoLeidos
 
     // Temporizador para ocultar la píldora flotante a los 3.5 segundos
     LaunchedEffect(mostrarAvisoSinInternet) {
@@ -48,7 +55,7 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
     val itemsMenu = listOf(
         ItemMenu("inicio", Icons.Default.Home, "Inicio"),
         ItemMenu("mapa", Icons.Default.LocationOn, "Mapa"),
-        ItemMenu("avisos", Icons.Default.ErrorOutline, "Avisos"),
+        ItemMenu("avisos", Icons.Default.Notifications, "Avisos"),
         ItemMenu("calendario", Icons.Default.CalendarToday, "calendario"),
         ItemMenu("perfil", Icons.Default.MoreHoriz, "Perfil")
     )
@@ -64,7 +71,21 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
                     NavigationBar(containerColor = Color.White, tonalElevation = 8.dp) {
                         itemsMenu.forEach { item ->
                             NavigationBarItem(
-                                icon = { Icon(item.icono, contentDescription = item.titulo) },
+                                icon = {
+                                    if (item.ruta == "avisos" && cantidadNoLeidos > 0) {
+                                        BadgedBox(
+                                            badge = {
+                                                Badge(containerColor = Color(0xFFD32F2F), contentColor = Color.White) {
+                                                    Text(text = if (cantidadNoLeidos > 99) "99+" else cantidadNoLeidos.toString())
+                                                }
+                                            }
+                                        ) {
+                                            Icon(item.icono, contentDescription = item.titulo)
+                                        }
+                                    } else {
+                                        Icon(item.icono, contentDescription = item.titulo)
+                                    }
+                                },
                                 label = { Text(text = item.titulo, fontSize = 11.sp) },
                                 selected = rutaActual == item.ruta,
                                 onClick = {
@@ -97,27 +118,49 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
             }
         ) { paddingInterno ->
             NavHost(navController = controladorNav, startDestination = "inicio", modifier = Modifier.padding(paddingInterno)) {
+                val navegarAAvisos: () -> Unit = {
+                    controladorNav.navigate("avisos") {
+                        popUpTo(controladorNav.graph.findStartDestination().id) { saveState = true }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
+                }
+
                 composable("inicio") { 
-                    Inicio(onNavegarADenuncia = { controladorNav.navigate("denuncia") }) 
+                    Inicio(
+                        onNavegarADenuncia = { controladorNav.navigate("denuncia") },
+                        onNavegarAAvisos = navegarAAvisos,
+                        cantidadNoLeidos = cantidadNoLeidos
+                    ) 
                 }
                 composable("mapa") { 
                     Mapa(
                         onAtras = { 
                             controladorNav.navigate("inicio") {
-                                popUpTo(controladorNav.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
+                                popUpTo(controladorNav.graph.findStartDestination().id) { saveState = true }
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        onNavegarAAvisos = navegarAAvisos,
+                        cantidadNoLeidos = cantidadNoLeidos
                     ) 
                 }
-                composable("avisos") { PantallaNotificaciones() }
-                composable("calendario") { Calendario() }
+                composable("avisos") { PantallaNotificaciones(vm = notifVm) }
+                composable("calendario") { 
+                    Calendario(
+                        onNotificaciones = navegarAAvisos,
+                        onVerAvisos = navegarAAvisos,
+                        cantidadNoLeidos = cantidadNoLeidos
+                    ) 
+                }
                 composable("perfil") { Prueba(onRegresarAlInicio) }
                 composable("denuncia") { 
-                    Denuncia(onRegresar = { controladorNav.popBackStack() }) 
+                    Denuncia(
+                        onRegresar = { controladorNav.popBackStack() },
+                        onNavegarAAvisos = navegarAAvisos,
+                        cantidadNoLeidos = cantidadNoLeidos
+                    ) 
                 }
             }
         }
