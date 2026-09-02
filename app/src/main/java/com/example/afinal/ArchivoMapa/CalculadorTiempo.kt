@@ -13,8 +13,8 @@ object CalculadorTiempo {
 
     private const val TAG = "CalculadorTiempo"
     
-    // Velocidad mínima de resguardo (12 km/h por defecto si nunca ha avanzado)
-    private var ultimaVelocidadValida = 12.0 
+    // Velocidad promedio de resguardo para tránsito urbano (15 km/h por defecto si el camión se detiene)
+    private var ultimaVelocidadValida = 15.0 
 
     /**
      * Calcula los minutos que le faltan al camión para llegar a la ubicación del usuario,
@@ -28,12 +28,13 @@ object CalculadorTiempo {
     ): Int {
         if (puntosRuta.isEmpty()) return -2
 
-        // 1. Si la velocidad actual de Firestore es mayor a 0.5 km/h, la guardamos como la "última válida"
-        if (velocidadActualKmH > 0.5) {
+        // 1. Si la velocidad actual de Firestore es mayor a 1.0 km/h, la guardamos como la "última válida"
+        if (velocidadActualKmH > 1.0) {
             ultimaVelocidadValida = velocidadActualKmH
             Log.d(TAG, "Nueva velocidad válida registrada: $ultimaVelocidadValida km/h")
         } else {
-            Log.d(TAG, "Camión detenido ($velocidadActualKmH km/h). Usando última velocidad: $ultimaVelocidadValida km/h")
+            if (ultimaVelocidadValida < 5.0) ultimaVelocidadValida = 15.0
+            Log.d(TAG, "Camión detenido ($velocidadActualKmH km/h). Usando velocidad promedio: $ultimaVelocidadValida km/h")
         }
 
         // 2. Encontrar el índice de la ruta donde está el camión y el usuario
