@@ -58,8 +58,9 @@ private val VerdeLive = Color(0xFF4CAF50)
 private val GrisSutil = Color(0xFF757575)
 private val NegroElegante = Color(0xFF212121)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Inicio(onNavegarADenuncia: () -> Unit) {
+fun Inicio(onNavegarADenuncia: () -> Unit = {}, onNavegarAAvisos: () -> Unit = {}, cantidadNoLeidos: Int = 0) {
     val context = LocalContext.current
     val cicloVidaOwner = LocalLifecycleOwner.current
     val config = LocalConfiguration.current
@@ -179,9 +180,21 @@ fun Inicio(onNavegarADenuncia: () -> Unit) {
                             Text("Bienvenido de nuevo a ${vm.barrioUsuario}", fontSize = 13.sp, color = Color.White.copy(0.7f))
                         }
 
-                        Box(modifier = Modifier.size(38.dp).clip(CircleShape).background(Color.White.copy(0.15f)).border(1.dp, Color.White.copy(0.1f), CircleShape), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.Notifications, null, tint = Color.White, modifier = Modifier.size(20.dp))
-                            Box(modifier = Modifier.size(8.dp).align(Alignment.TopEnd).padding(2.dp).clip(CircleShape).background(VerdeLive))
+                        BadgedBox(
+                            badge = {
+                                if (cantidadNoLeidos > 0) {
+                                    Badge(containerColor = Color(0xFFD32F2F), contentColor = Color.White) {
+                                        Text(text = if (cantidadNoLeidos > 99) "99+" else cantidadNoLeidos.toString())
+                                    }
+                                }
+                            }
+                        ) {
+                            IconButton(
+                                onClick = onNavegarAAvisos,
+                                modifier = Modifier.size(40.dp).clip(CircleShape).background(Color.White.copy(0.15f)).border(1.dp, Color.White.copy(0.1f), CircleShape)
+                            ) {
+                                Icon(Icons.Default.Notifications, "Avisos", tint = Color.White, modifier = Modifier.size(22.dp))
+                            }
                         }
                     }
 

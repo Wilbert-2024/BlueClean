@@ -44,8 +44,9 @@ import com.example.afinal.ui.theme.FinalTheme
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Mapa(onAtras: () -> Unit) {
+fun Mapa(onAtras: () -> Unit, onNavegarAAvisos: () -> Unit = {}, cantidadNoLeidos: Int = 0) {
     val contexto = LocalContext.current
     val cicloVidaOwner = LocalLifecycleOwner.current
     val vm = remember { Mapa_vistaModal() }
@@ -55,6 +56,7 @@ fun Mapa(onAtras: () -> Unit) {
     var circuloPulso by remember { mutableStateOf<Circle?>(null) }
     var puntoCentro by remember { mutableStateOf<Circle?>(null) }
     var expandido by remember { mutableStateOf(false) }
+    var mostrarLeyenda by remember { mutableStateOf(false) }
 
     // --- ELEMENTOS PERSISTENTES EN EL MAPA ---
     var marcadorCamion by remember { mutableStateOf<Marker?>(null) }
@@ -311,27 +313,98 @@ fun Mapa(onAtras: () -> Unit) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Surface(
-                modifier = Modifier .clip(RoundedCornerShape(50)).shadow(4.dp),
-                color = Color.White
+            IconButton(
+                onClick = { mostrarLeyenda = true },
+                modifier = Modifier.size(44.dp).clip(CircleShape).shadow(4.dp).background(Color.White)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(Icons.Default.LocationOn, null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Text("Tu Barrio: ", fontSize = 13.sp, color = Color.Gray)
-                    Text(vm.barrioUsuario, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.Black)
-                }
+                Icon(Icons.Default.Info, "Leyenda", tint = Color(0xFF004527), modifier = Modifier.size(22.dp))
             }
 
-            Surface(
-                modifier = Modifier.size(44.dp).clip(CircleShape).shadow(4.dp) .clickable { },
-                color = Color.White
+            BadgedBox(
+                badge = {
+                    if (cantidadNoLeidos > 0) {
+                        Badge(containerColor = Color(0xFFD32F2F), contentColor = Color.White) {
+                            Text(text = if (cantidadNoLeidos > 99) "99+" else cantidadNoLeidos.toString())
+                        }
+                    }
+                }
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.Notifications, null, tint = Color(0xFF004527), modifier = Modifier.size(22.dp))
+                IconButton(
+                    onClick = onNavegarAAvisos,
+                    modifier = Modifier.size(44.dp).clip(CircleShape).shadow(4.dp).background(Color.White)
+                ) {
+                    Icon(Icons.Default.Notifications, "Avisos", tint = Color(0xFF004527), modifier = Modifier.size(22.dp))
+                }
+            }
+        }
+
+        // --- LEYENDA COMPACTA EN FORMA DE PÍLDORA (IZQUIERDA) ---
+        if (mostrarLeyenda) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.2f))
+                    .clickable { mostrarLeyenda = false }
+            ) {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(top = 64.dp, start = 16.dp)
+                        .widthIn(max = 200.dp)
+                        .shadow(6.dp, RoundedCornerShape(20.dp))
+                        .clickable(enabled = false) { },
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .width(16.dp)
+                                    .height(4.dp)
+                                    .background(Color(0xFF4CAF50), RoundedCornerShape(2.dp))
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Recorrido", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .width(16.dp)
+                                    .height(4.dp)
+                                    .background(Color(0xFF00BCD4), RoundedCornerShape(2.dp))
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Sin recorrer", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF2196F3))
+                            )
+                            Spacer(Modifier.width(10.dp))
+                            Text("Tu ubicación", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocalShipping,
+                                contentDescription = null,
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text("Camión", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        }
+                    }
                 }
             }
         }
@@ -372,10 +445,48 @@ fun Mapa(onAtras: () -> Unit) {
                             Spacer(Modifier.width(10.dp))
 
                             Column(modifier = Modifier.weight(1f)) {
-                                Text( text = "PRÓXIMA PARADA", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 0.5.sp )
-                                
-                                val proximaParadaTexto = vm.proximasParadas.firstOrNull() ?: vm.barrioUsuario
-                                Text( text = proximaParadaTexto, fontSize = 14.sp,fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A237E) )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text( text = "PUNTO DE REFERENCIA", fontSize = 9.sp, fontWeight = FontWeight.Bold, color = Color.Gray, letterSpacing = 0.5.sp )
+
+                                    if (vm.minutosRestantes > 0) {
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = Color(0xFFE8F5E9)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Schedule,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF2E7D32),
+                                                    modifier = Modifier.size(10.dp)
+                                                )
+                                                Spacer(Modifier.width(3.dp))
+                                                Text(
+                                                    text = "${vm.minutosRestantes} min",
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color(0xFF2E7D32)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                val actual = vm.proximasParadas.getOrNull(0) ?: vm.barrioUsuario
+                                val siguiente = vm.proximasParadas.getOrNull(1)
+
+                                Text( text = actual, fontSize = 13.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFF1A237E) )
+                                if (siguiente != null) {
+                                    Spacer(Modifier.height(1.dp))
+                                    Text( text = "Siguiente: $siguiente", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = Color.Gray )
+                                }
                             }
 
                             IconButton(
@@ -384,7 +495,7 @@ fun Mapa(onAtras: () -> Unit) {
                             ) {
                                 Icon(
                                     imageVector = if (expandido) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "Ver paradas",
+                                    contentDescription = "Ver puntos",
                                     tint = Color.Gray
                                 )
                             }
@@ -393,7 +504,7 @@ fun Mapa(onAtras: () -> Unit) {
                         if (expandido && vm.proximasParadas.isNotEmpty()) {
                             HorizontalDivider(color = Color(0xFFEEEEEE), thickness = 1.dp)
                             Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                                Text(text = "Recorrido de paradas:",fontSize = 11.sp, fontWeight = FontWeight.Bold,color = Color.Gray, modifier = Modifier.padding(bottom = 6.dp) )
+                                Text(text = "Puntos de referencia:",fontSize = 11.sp, fontWeight = FontWeight.Bold,color = Color.Gray, modifier = Modifier.padding(bottom = 6.dp) )
                                 
                                 vm.proximasParadas.forEachIndexed { index, parada ->
                                     Row(
