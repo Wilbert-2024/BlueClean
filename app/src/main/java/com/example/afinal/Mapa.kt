@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.*
@@ -65,6 +67,14 @@ fun Mapa(onAtras: () -> Unit) {
     var gpsActivo by remember { mutableStateOf(GestorPermisosMapa.verificarGpsActivo(contexto)) }
     var mostrarDialogoGps by remember { mutableStateOf(!permisoConcedido || !gpsActivo) }
 
+    // --- ESTADOS DE CONTROL DE INTERNET ---
+    var hayInternet by remember { mutableStateOf(GestorPermisosMapa.verificarConexionInternet(contexto)) }
+    var mostrarDialogoSinInternet by remember { mutableStateOf(!hayInternet) }
+
+    // Evaluación para mantener la rueda de carga hasta que el mapa y el punto azul del usuario estén listos
+    val faltaUbicacionUsuario = permisoConcedido && gpsActivo && (vm.ubicacionUsuario == null)
+    val estaPreparandoMapa = vm.estaCargando || !camaraInicializada || faltaUbicacionUsuario
+
     val transicionInfinita = rememberInfiniteTransition(label = "pulso")
     val escalaPulso by transicionInfinita.animateFloat(
         initialValue = 0f, targetValue = 1f,
@@ -91,13 +101,19 @@ fun Mapa(onAtras: () -> Unit) {
                 if (permisoConcedido && gpsActivo) {
                     vm.iniciarGpsUsuario(contexto)
                 }
+
+                val conectado = GestorPermisosMapa.verificarConexionInternet(contexto)
+                hayInternet = conectado
+                if (!conectado) {
+                    mostrarDialogoSinInternet = true
+                }
             }
         }
         cicloVidaOwner.lifecycle.addObserver(observador)
         onDispose { cicloVidaOwner.lifecycle.removeObserver(observador) }
     }
 
-    // --- RECEPTOR NATIVO DE EVENTOS DEL SISTEMA (INSTANTÁNEO AL APAGAR GPS) ---
+    // --- RECEPTOR NATIVO DE EVENTOS DEL SISTEMA (GPS E INTERNET) ---
     DisposableEffect(contexto) {
         val receptorGps = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -110,10 +126,19 @@ fun Mapa(onAtras: () -> Unit) {
                     if (tienePermiso && tieneGps) {
                         vm.iniciarGpsUsuario(contexto)
                     }
+                } else if (intent?.action == ConnectivityManager.CONNECTIVITY_ACTION) {
+                    val conectado = GestorPermisosMapa.verificarConexionInternet(contexto)
+                    hayInternet = conectado
+                    if (!conectado) {
+                        mostrarDialogoSinInternet = true
+                    }
                 }
             }
         }
-        val filtro = IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION)
+        val filtro = IntentFilter().apply {
+            addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
+            addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+        }
         contexto.registerReceiver(receptorGps, filtro)
 
         onDispose {
@@ -139,6 +164,7 @@ fun Mapa(onAtras: () -> Unit) {
             vm.detenerGpsUsuario()
         } else {
             camaraInicializada = false
+            vm.ubicacionUsuario = null
             vm.iniciarGpsUsuario(contexto)
         }
     }
@@ -206,17 +232,44 @@ fun Mapa(onAtras: () -> Unit) {
                 }
             }
 
+            // ENCUADRE DINÁMICO INTELIGENTE (CAMIÓN + USUARIO)
             if (!camaraInicializada) {
-                val posicionEnfoque = vm.ubicacionUsuario ?: posCamion ?: LatLng(12.0131, -83.7635)
-                if (puntosTotales.isNotEmpty()) {
+                val uUser = vm.ubicacionUsuario
+                val uCamion = posCamion
+
+                if (uUser != null && uCamion != null && uUser.latitude != 0.0 && uCamion.latitude != 0.0) {
                     try {
-                        val limites = LatLngBounds.builder().apply { puntosTotales.forEach { include(it) } }.build()
-                        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, 100))
+                        val builder = LatLngBounds.builder()
+                        builder.include(uUser)
+                        builder.include(uCamion)
+
+                        if (puntosTotales.isNotEmpty()) {
+                            val idxCamion = CalculadorTiempo.buscarIndiceMasCercano("CAMION_FRAME", uCamion, puntosTotales)
+                            val idxUser = CalculadorTiempo.buscarIndiceMasCercano("USER_FRAME", uUser, puntosTotales)
+                            val inicio = minOf(idxCamion, idxUser)
+                            val fin = maxOf(idxCamion, idxUser)
+                            for (i in inicio..fin) {
+                                builder.include(puntosTotales[i])
+                            }
+                        }
+
+                        val limites = builder.build()
+                        googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, 120))
                         camaraInicializada = true
                     } catch (_: Exception) {}
-                } else {
-                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(posicionEnfoque, 15f))
-                    if (vm.ubicacionUsuario != null || posCamion != null) camaraInicializada = true
+                } else if (uCamion != null && uCamion.latitude != 0.0) {
+                    try {
+                        if (puntosTotales.isNotEmpty()) {
+                            val limites = LatLngBounds.builder().apply { puntosTotales.forEach { include(it) } }.build()
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngBounds(limites, 100))
+                        } else {
+                            googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(uCamion, 15f))
+                        }
+                        camaraInicializada = true
+                    } catch (_: Exception) {}
+                } else if (uUser != null && uUser.latitude != 0.0) {
+                    googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(uUser, 15f))
+                    camaraInicializada = true
                 }
             }
         }
@@ -365,6 +418,116 @@ fun Mapa(onAtras: () -> Unit) {
                     }
                 }
             }
+        }
+
+        // --- PANTALLA / PANEL FLOTANTE DE CARGA MIENTRAS SE PREPARA EL MAPA Y EL PUNTERO AZUL ---
+        if (estaPreparandoMapa && !mostrarDialogoGps && !mostrarDialogoSinInternet) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.25f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            color = Color(0xFF004527),
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(36.dp)
+                        )
+                        Spacer(Modifier.height(14.dp))
+                        Text(
+                            text = "Preparando mapa...",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF212121)
+                        )
+                    }
+                }
+            }
+        }
+
+        // --- CUADRO DE DIÁLOGO OBLIGATORIO "SIN CONEXIÓN A INTERNET" ---
+        if (mostrarDialogoSinInternet) {
+            AlertDialog(
+                onDismissRequest = { },
+                title = {
+                    Text(
+                        text = "Sin conexión",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFFD32F2F)
+                    )
+                },
+                text = {
+                    Text(
+                        text = "Para acceder al mapa en tiempo real es necesario contar con conexión a Internet.",
+                        fontSize = 14.sp,
+                        color = Color(0xFF333333),
+                        lineHeight = 20.sp
+                    )
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            val conectado = GestorPermisosMapa.verificarConexionInternet(contexto)
+                            hayInternet = conectado
+                            if (conectado) {
+                                // Limpieza y reinicio total de estados de cero
+                                marcadorCamion?.remove()
+                                marcadorCamion = null
+                                polilineaPasada?.remove()
+                                polilineaFutura?.remove()
+                                polilineaPasada = null
+                                polilineaFutura = null
+                                posCamionAnterior = null
+                                circuloPulso?.remove()
+                                puntoCentro?.remove()
+                                circuloPulso = null
+                                puntoCentro = null
+
+                                camaraInicializada = false
+                                vm.estaCargando = true
+                                vm.ubicacionUsuario = null
+                                vm.ubicacionCamion = null
+                                vm.rutaTrazada = emptyList()
+
+                                vm.cargarDatos(contexto)
+                                if (permisoConcedido && gpsActivo) {
+                                    vm.iniciarGpsUsuario(contexto)
+                                }
+                                mostrarDialogoSinInternet = false
+                            } else {
+                                Toast.makeText(contexto, "Sigue sin conexión", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF004527), contentColor = Color.White),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(text = "Actualizar", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            mostrarDialogoSinInternet = false
+                            onAtras()
+                        }
+                    ) {
+                        Text(text = "Salir", color = Color(0xFF666666), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(20.dp)
+            )
         }
 
         // --- CUADRO DE DIÁLOGO OBLIGATORIO DE BLOQUEO DE GPS ---

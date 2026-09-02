@@ -31,6 +31,7 @@ class Mapa_vistaModal : ViewModel() {
     private var gestorGPS: SeguimientoGPS? = null
 
     fun cargarDatos(context: Context) {
+        estaCargando = true
         val datos = datosEnMemoria.obtener(context) ?: return
         barrioUsuario = datos.Barrio
         val rutaId = datos.RutaId
