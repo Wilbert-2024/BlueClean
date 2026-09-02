@@ -12,6 +12,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.YearMonth
 
 class Calendario_vistaModal : ViewModel() {
     var barrio by mutableStateOf("")
@@ -20,6 +21,12 @@ class Calendario_vistaModal : ViewModel() {
     var horaFin by mutableStateOf("12:00")
     var estaCargando by mutableStateOf(true)
     var fechasFeriadas by mutableStateOf<Map<LocalDate, String>>(emptyMap())
+    var mesActual by mutableStateOf(YearMonth.now())
+    var diaSeleccionado by mutableStateOf<LocalDate>(LocalDate.now())
+
+    fun mesAnterior() { mesActual = mesActual.minusMonths(1) }
+    fun mesSiguiente() { mesActual = mesActual.plusMonths(1) }
+    fun seleccionarDia(fecha: LocalDate) { diaSeleccionado = fecha }
 
     fun cargarDatos(context: Context) {
         val datos = datosEnMemoria.obtener(context)
