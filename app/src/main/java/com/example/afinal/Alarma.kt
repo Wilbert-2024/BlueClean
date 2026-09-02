@@ -1,5 +1,6 @@
 package com.example.afinal
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,10 +9,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.WbSunny
 import androidx.compose.material.icons.outlined.Nightlight
 import androidx.compose.material3.*
@@ -33,10 +34,8 @@ import com.example.afinal.servicios.GestionAlarmas
 @Composable
 fun DialogoConfigurarRecordatorio(onDismiss: () -> Unit, onGuardar: () -> Unit) {
     val context = LocalContext.current
-    var recordatorioActivo by remember { mutableStateOf(value = true) }
-    var nocheAnterior by remember { mutableStateOf(value = false) }
-    var diaRecoleccion by remember { mutableStateOf(value = true) }
-    var predeterminado by remember { mutableStateOf(value = true) }
+    var modoSeleccionado by remember { mutableStateOf("AMBOS") }
+    var predeterminado by remember { mutableStateOf(true) }
 
     var horaNoche by remember { mutableStateOf("17:30") }
     var horaDia by remember { mutableStateOf("07:00") }
@@ -46,86 +45,233 @@ fun DialogoConfigurarRecordatorio(onDismiss: () -> Unit, onGuardar: () -> Unit) 
     if (mostrarRelojNoche) SeleccionadorHora(horaNoche, { mostrarRelojNoche = false }) { horaNoche = it; mostrarRelojNoche = false }
     if (mostrarRelojDia) SeleccionadorHora(horaDia, { mostrarRelojDia = false }) { horaDia = it; mostrarRelojDia = false }
 
-    Column(modifier = Modifier.fillMaxWidth().background(Colores.BlancoTarjeta, RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)).verticalScroll(rememberScrollState()).padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Colores.BlancoTarjeta, RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp))
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp)
+    ) {
+        Box(modifier = Modifier.padding(bottom = 14.dp).size(width = 44.dp, height = 4.dp).clip(CircleShape).background(Color.LightGray).align(Alignment.CenterHorizontally))
 
-        Box(modifier = Modifier.padding(vertical = 12.dp).size(width = 40.dp, height = 4.dp).clip(CircleShape).background(Color.LightGray).align(Alignment.CenterHorizontally))
-
+        // Clean Header with Official App Typography
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "Configurar recordatorio", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
-            IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Colores.TextoGrisSecundario) }
+            Column {
+                Text(text = "Recordatorios", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = Colores.VerdeBosque)
+                Text(text = "Avisos automáticos de recolección", fontSize = 12.sp, color = Colores.TextoGrisSecundario)
+            }
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(36.dp).clip(CircleShape).background(Colores.VerdeFondoSuave)
+            ) {
+                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Colores.VerdeBosque)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Mode Selector Pills (Official Palette)
+        Surface(
+            modifier = Modifier.fillMaxWidth().height(46.dp),
+            shape = RoundedCornerShape(50),
+            color = Color(0xFFF2F4F3)
+        ) {
+            Row(modifier = Modifier.fillMaxSize().padding(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                ModoChip(
+                    titulo = "🌙 NOCHE",
+                    activo = modoSeleccionado == "NOCHE",
+                    onClick = { modoSeleccionado = "NOCHE" },
+                    modifier = Modifier.weight(1f)
+                )
+                ModoChip(
+                    titulo = "☀️ MAÑANA",
+                    activo = modoSeleccionado == "MAÑANA",
+                    onClick = { modoSeleccionado = "MAÑANA" },
+                    modifier = Modifier.weight(1f)
+                )
+                ModoChip(
+                    titulo = "⚡ AMBOS",
+                    activo = modoSeleccionado == "AMBOS",
+                    onClick = { modoSeleccionado = "AMBOS" },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // Giant Digital Clock Display Card (VerdeBosque + VerdeVibrante)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Colores.VerdeBosque),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Surface(
+                    color = Color.White.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = if (modoSeleccionado == "NOCHE") Icons.Outlined.Nightlight else if (modoSeleccionado == "MAÑANA") Icons.Default.WbSunny else Icons.Default.FlashOn,
+                            contentDescription = null,
+                            tint = Colores.VerdeVibrante,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = if (modoSeleccionado == "NOCHE") "NOCHE ANTERIOR" else if (modoSeleccionado == "MAÑANA") "DÍA DE RECOLECCIÓN" else "MODO DOBLE ACTIVADO",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Colores.VerdeVibrante
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                val horaAMostrar = if (modoSeleccionado == "NOCHE") horaNoche else if (modoSeleccionado == "MAÑANA") horaDia else "$horaNoche / $horaDia"
+                Text(
+                    text = horaAMostrar,
+                    fontSize = if (modoSeleccionado == "AMBOS") 34.sp else 52.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Colores.VerdeVibrante,
+                    letterSpacing = 2.sp
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Tuning Action Buttons
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (modoSeleccionado == "NOCHE" || modoSeleccionado == "AMBOS") {
+                        Button(
+                            onClick = { mostrarRelojNoche = true },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.18f))
+                        ) {
+                            Icon(Icons.Default.EditCalendar, contentDescription = null, tint = Colores.VerdeVibrante, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Ajustar Noche ($horaNoche)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                    if (modoSeleccionado == "MAÑANA" || modoSeleccionado == "AMBOS") {
+                        Button(
+                            onClick = { mostrarRelojDia = true },
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color.White.copy(alpha = 0.18f))
+                        ) {
+                            Icon(Icons.Default.EditCalendar, contentDescription = null, tint = Colores.VerdeVibrante, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(text = "Ajustar Día ($horaDia)", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    }
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = if (recordatorioActivo) Colores.VerdeFondoSuave else Colores.BlancoTarjeta), border = androidx.compose.foundation.BorderStroke(1.dp, if (recordatorioActivo) Color(0xFFE0EBE2) else Color(0xFFEEEEEE))) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(44.dp).background(Colores.BlancoTarjeta, CircleShape), contentAlignment = Alignment.Center) { Icon(imageVector = Icons.Default.Notifications, contentDescription = null, tint = Colores.VerdeSecundario, modifier = Modifier.size(24.dp)) }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Activar recordatorio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
-                    Text(text = "Te avisaremos antes de que pase el camión recolector", fontSize = 12.sp, color = Colores.TextoGrisSecundario, lineHeight = 16.sp)
-                }
-                Switch(checked = recordatorioActivo, onCheckedChange = { recordatorioActivo = it }, colors = SwitchDefaults.colors(checkedThumbColor = Colores.BlancoTarjeta, checkedTrackColor = Colores.VerdeSecundario))
+        // Status Pulse Bar (VerdePastel + VerdeBosque)
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = Colores.VerdePastel,
+            border = BorderStroke(1.dp, Color(0xFFC8E6C9))
+        ) {
+            Row(
+                modifier = Modifier.padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(Colores.VerdeSecundario)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "STATUS: RECORDATORIO ACTIVADO",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Colores.VerdeBosque,
+                    letterSpacing = 0.5.sp
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Text(text = "¿CUÁNDO Y A QUÉ HORA TE AVISAMOS?", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeSecundario, letterSpacing = 0.5.sp)
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        OpcionRecordatorio(Icons.Outlined.Nightlight, "La noche anterior", "para ir preparando las bolsas", horaNoche, nocheAnterior, { nocheAnterior = it }) { mostrarRelojNoche = true }
-        Spacer(modifier = Modifier.height(12.dp))
+        // Predeterminado Checkbox
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .clickable { predeterminado = !predeterminado }
+                .padding(vertical = 4.dp, horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = predeterminado,
+                onCheckedChange = { predeterminado = it },
+                colors = CheckboxDefaults.colors(checkedColor = Colores.VerdeSecundario, checkmarkColor = Colores.BlancoTarjeta)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(text = "Guardar como preferido predeterminado", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
+                Text(text = "Aplicar a todas las recolecciones de mi barrio", fontSize = 11.sp, color = Colores.TextoGrisSecundario)
+            }
+        }
 
-        OpcionRecordatorio(Icons.Default.WbSunny, "El día de la recolección", "Justo antes de que pase el camión recolector", horaDia, diaRecoleccion, { diaRecoleccion = it }) { mostrarRelojDia = true }
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
-        Button(onClick = {
-            GestionAlarmas.programarRecordatorios(context, recordatorioActivo, horaNoche, nocheAnterior, horaDia, diaRecoleccion)
-            onGuardar()
-            Mensajeria.exito("¡Recordatorios guardados correctamente!")
-        }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(50), colors = ButtonDefaults.buttonColors(containerColor = Colores.VerdeBosque)) {
+        // Primary CTA Button
+        Button(
+            onClick = {
+                val nocheActiva = modoSeleccionado == "NOCHE" || modoSeleccionado == "AMBOS"
+                val diaActivo = modoSeleccionado == "MAÑANA" || modoSeleccionado == "AMBOS"
+                GestionAlarmas.programarRecordatorios(context, true, horaNoche, nocheActiva, horaDia, diaActivo)
+                onGuardar()
+                Mensajeria.exito("¡Recordatorios guardados correctamente!")
+            },
+            modifier = Modifier.fillMaxWidth().height(52.dp),
+            shape = RoundedCornerShape(50),
+            colors = ButtonDefaults.buttonColors(containerColor = Colores.VerdeBosque)
+        ) {
             Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(20.dp), tint = Colores.BlancoTarjeta)
             Spacer(modifier = Modifier.width(8.dp))
-            Text(text = "Guardar recordatorios", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.BlancoTarjeta)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE))) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = predeterminado, onCheckedChange = { predeterminado = it }, colors = CheckboxDefaults.colors(checkedColor = Colores.VerdeSecundario, checkmarkColor = Colores.BlancoTarjeta))
-                Spacer(modifier = Modifier.width(8.dp))
-                Column {
-                    Text(text = "Guardar como predeterminado", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
-                    Text(text = "Aplicar esta configuración a todas mis próximas recolecciones", fontSize = 12.sp, color = Colores.TextoGrisSecundario)
-                }
-            }
+            Text(text = "Guardar recordatorio", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.BlancoTarjeta)
         }
     }
 }
 
 @Composable
-private fun OpcionRecordatorio(icono: androidx.compose.ui.graphics.vector.ImageVector, titulo: String, descripcion: String, hora: String, seleccionado: Boolean, onSeleccionChange: (Boolean) -> Unit, onClickHora: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Colores.BlancoTarjeta), border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFEEEEEE))) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icono, contentDescription = null, tint = Colores.VerdeBosque, modifier = Modifier.size(24.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = titulo, fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
-                    Text(text = descripcion, fontSize = 12.sp, color = Colores.TextoGrisSecundario)
-                }
-                Checkbox(checked = seleccionado, onCheckedChange = onSeleccionChange, colors = CheckboxDefaults.colors(checkedColor = Colores.VerdeSecundario, checkmarkColor = Colores.BlancoTarjeta))
-            }
-            Spacer(modifier = Modifier.height(12.dp))
-            Surface(color = if (seleccionado) Colores.VerdeFondoSuave else Color(0xFFF5F5F5), shape = RoundedCornerShape(50), modifier = Modifier.clip(RoundedCornerShape(50)).clickable { onClickHora() }) {
-                Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = hora, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Colores.VerdeBosque)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(Icons.Default.AccessTime, contentDescription = null, tint = Colores.VerdeBosque, modifier = Modifier.size(18.dp))
-                }
-            }
-        }
+private fun ModoChip(
+    titulo: String,
+    activo: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(50))
+            .background(if (activo) Colores.VerdeBosque else Color.Transparent)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = titulo,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (activo) Color.White else Colores.TextoGrisSecundario
+        )
     }
 }
 
