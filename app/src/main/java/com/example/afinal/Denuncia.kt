@@ -29,8 +29,9 @@ import com.example.afinal.componentes.SelectorOpciones
 import com.example.afinal.datos.Colores
 import com.example.afinal.datos.ListadoBarrios
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Denuncia(onRegresar: () -> Unit) {
+fun Denuncia(onRegresar: () -> Unit, onNavegarAAvisos: () -> Unit = {}, cantidadNoLeidos: Int = 0) {
     var tipo by remember { mutableStateOf("") }
     var especificarOtro by remember { mutableStateOf("") }
     var barrio by remember { mutableStateOf("") }
@@ -52,7 +53,19 @@ fun Denuncia(onRegresar: () -> Unit) {
         Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.AutoMirrored.Filled.ArrowBack, "Regresar", tint = Colores.VerdePrincipal, modifier = Modifier.size(24.dp).clickable { onRegresar() })
             Text("Reportar Incidencia", Modifier.weight(1f), color = Colores.VerdePrincipal, fontSize = 18.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-            Icon(Icons.Default.Notifications, null, tint = Colores.VerdePrincipal, modifier = Modifier.size(24.dp))
+           /* BadgedBox(
+                badge = {
+                    if (cantidadNoLeidos > 0) {
+                        Badge(containerColor = Color(0xFFD32F2F), contentColor = Color.White) {
+                            Text(text = if (cantidadNoLeidos > 99) "99+" else cantidadNoLeidos.toString())
+                        }
+                    }
+                }
+            ) {
+                IconButton(onClick = onNavegarAAvisos) {
+                    Icon(Icons.Default.Notifications, "Avisos", tint = Colores.VerdePrincipal, modifier = Modifier.size(24.dp))
+                }
+            }*/
         }
 
         Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {

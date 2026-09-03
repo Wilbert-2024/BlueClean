@@ -70,10 +70,21 @@ fun Inicio(onNavegarADenuncia: () -> Unit = {}, onNavegarAAvisos: () -> Unit = {
     var estaCargando by remember { mutableStateOf(true) }
     var mostrarRuta by remember { mutableStateOf(false) }
 
-    // --- ESTADOS DE CONTROL DE GPS ---
+    // --- ESTADOS DE CONTROL DE GPS Y CÁLCULO ---
     var permisoConcedido by remember { mutableStateOf(GestorPermisosMapa.tienePermisoUbicacion(context)) }
     var gpsActivo by remember { mutableStateOf(GestorPermisosMapa.verificarGpsActivo(context)) }
     val ubicaActiva = permisoConcedido && gpsActivo
+    val estaCalculando = ubicaActiva && vm.estadoServicio && vm.calculandoTiempo
+    var puntosCargando by remember { mutableIntStateOf(1) }
+
+    LaunchedEffect(estaCalculando) {
+        if (estaCalculando) {
+            while (true) {
+                kotlinx.coroutines.delay(400L)
+                puntosCargando = (puntosCargando % 3) + 1
+            }
+        }
+    }
 
     // --- ANIMACIÓN DE PARPADEO Y PULSO CONTINUO MIENTRAS EL GPS ESTÉ APAGADO ---
     val transicionParpadeo = rememberInfiniteTransition(label = "pulsoAvisoGps")
@@ -237,19 +248,23 @@ fun Inicio(onNavegarADenuncia: () -> Unit = {}, onNavegarAAvisos: () -> Unit = {
                                 Column(Modifier.weight(1f)) {
                                     Text("Próxima llegada estimada", fontSize = 12.sp, color = GrisSutil)
 
-                                    val textoLlegada = if (!ubicaActiva) {
-                                        vm.horarioRuta
-                                    } else if (vm.estadoServicio) {
-                                        when (vm.minutosRestantes) {
-                                            -1 -> "Ya pasó por tu casa"
-                                            0 -> "¡Llegando a tu casa!"
-                                            else -> if (vm.minutosRestantes > 0) "En ${vm.minutosRestantes} min aprox." else vm.horarioRuta
-                                        }
+                                    if (estaCalculando) {
+                                        Text("Calculando" + ".".repeat(puntosCargando), fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = Color(0xFFD97706))
                                     } else {
-                                        vm.horarioRuta
-                                    }
+                                        val textoLlegada = if (!ubicaActiva) {
+                                            vm.horarioRuta
+                                        } else if (vm.estadoServicio) {
+                                            when (vm.minutosRestantes) {
+                                                -1 -> "Ya pasó por tu casa"
+                                                0 -> "¡Llegando a tu casa!"
+                                                else -> if (vm.minutosRestantes > 0) "En ${vm.minutosRestantes} min aprox." else vm.horarioRuta
+                                            }
+                                        } else {
+                                            vm.horarioRuta
+                                        }
 
-                                    Text(textoLlegada, fontSize = 20.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
+                                        Text(textoLlegada, fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = NegroElegante)
+                                    }
                                 }
                             }
                         }
@@ -296,14 +311,14 @@ fun Inicio(onNavegarADenuncia: () -> Unit = {}, onNavegarAAvisos: () -> Unit = {
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    Button(
+                  /*  Button(
                         onClick = { ExportadorDatos.exportarTodoALogcat() },
                         modifier = Modifier.fillMaxWidth().height(40.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.1f)),
                         shape = RoundedCornerShape(12.dp)
                     ) {
                         Text("DEBUG: EXPORTAR BASE DE DATOS", color = Color.Red, fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                    }
+                    }*/
                 }
             }
 

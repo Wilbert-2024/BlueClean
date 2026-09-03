@@ -29,8 +29,10 @@ class Mapa_vistaModal : ViewModel() {
 
     private var ubicacionListener: ListenerRegistration? = null
     private var gestorGPS: SeguimientoGPS? = null
+    private var appContext: Context? = null
 
     fun cargarDatos(context: Context) {
+        appContext = context.applicationContext
         estaCargando = true
         val datos = datosEnMemoria.obtener(context) ?: return
         barrioUsuario = datos.Barrio
@@ -90,6 +92,7 @@ class Mapa_vistaModal : ViewModel() {
 
         if (uUser != null && uCamion != null && ruta.isNotEmpty()) {
             minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
+            com.example.afinal.servicios.GestorNotificacionesLlegada.verificarYEnviar(appContext, minutosRestantes)
         }
     }
 

@@ -57,7 +57,7 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
         ItemMenu("mapa", Icons.Default.LocationOn, "Mapa"),
         ItemMenu("avisos", Icons.Default.Notifications, "Avisos"),
         ItemMenu("calendario", Icons.Default.CalendarToday, "calendario"),
-        ItemMenu("perfil", Icons.Default.MoreHoriz, "Perfil")
+        ItemMenu("Ajuste", Icons.Default.MoreHoriz, "Ajuste")
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -154,7 +154,7 @@ fun MenuPrincipal(onRegresarAlInicio: () -> Unit) {
                         cantidadNoLeidos = cantidadNoLeidos
                     ) 
                 }
-                composable("perfil") { Prueba(onRegresarAlInicio) }
+                composable("Ajuste") { PantallaAjustes(onRegresarAlInicio) }
                 composable("denuncia") { 
                     Denuncia(
                         onRegresar = { controladorNav.popBackStack() },

@@ -31,6 +31,7 @@ class Inicio_vistaModal : ViewModel() {
     var origenDestino by mutableStateOf(Pair("Origen", "Destino"))
     
     // --- LÓGICA DE TIEMPO REAL Y PROGRESO ---
+    var calculandoTiempo by mutableStateOf(true)
     var minutosRestantes by mutableIntStateOf(0)
     var progresoRuta by mutableFloatStateOf(0.0f)
     var velocidadCamion by mutableDoubleStateOf(0.0)
@@ -41,8 +42,10 @@ class Inicio_vistaModal : ViewModel() {
     private var rutaListener: ListenerRegistration? = null
     private var ubicacionCamionListener: ListenerRegistration? = null
     private var gestorGPS: SeguimientoGPS? = null
+    private var appContext: Context? = null
 
     fun cargarDatos(context: Context) {
+        appContext = context.applicationContext
         val datos = datosEnMemoria.obtener(context) ?: return
         nombreUsuario = datos.NomUsuario
         barrioUsuario = datos.Barrio
@@ -126,6 +129,8 @@ class Inicio_vistaModal : ViewModel() {
             // 2. Actualizar el tiempo estimado si tenemos la ubicación GPS del usuario
             if (uUser != null) {
                 minutosRestantes = CalculadorTiempo.estimarMinutosLlegada(uCamion, uUser, ruta, velocidadCamion)
+                calculandoTiempo = false
+                com.example.afinal.servicios.GestorNotificacionesLlegada.verificarYEnviar(appContext, minutosRestantes)
             }
         }
     }
